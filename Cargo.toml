@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+
+members = ["testApp",
+    "usb"
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+license = "MIT"
+authors = [
+    "Malte Linke <me@parzival.space>"
+]
+
+repository = "https://github.com/parzival-space/rodecaster-manager"
+
+[workspace.dependencies]
+log = "0.4.29"
+
+### USB Handler
+nusb = "0.2.1"

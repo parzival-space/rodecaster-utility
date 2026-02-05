@@ -1,0 +1,14 @@
+[package]
+name = "testApp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+simplelog = "0.12.2"
+
+nusb = { workspace = true }
+rodecaster-usb = { path = "../usb" }
+log = "0.4.29"
