@@ -155,20 +155,20 @@ The RODECaster Pro II has to be put into a special mode called "Transfer Mode" t
 This command triggers the device to enter this mode, but this is probably not enough to actually start a file transfer, 
 as the device also needs to be informed about which pad should be updates.
 
-| Offset | Length (bytes) | Value                       | Description / Note |
-|--------|----------------|-----------------------------|--------------------|
-| 0      | 1              | `0x03`                      | MAGIC Number       |
-| 1      | 1              | `0x1D`                      | Message length     |
-| 2      | 3              | `0x00 0x00 0x00`            | Seperator.         |
-| 6      | 1              | `0x01`                      |                    |
-| 7      | 1              | `0x01`                      |                    |
-| 8      | 1              | `0x01`                      |                    |
-| 9      | 1              | `0x01`                      |                    |
-| 10     | 1              | `0x0D`                      | Unknown            |
-| 11     | 16             | `transferModeType`          | ASCII Command      |
-| 27     | 1              | `0x00`                      | Null-Terminator    |
-| 28     | 1              | `0x01`                      | Unknown            |
-| 29     | 1              | `0x05`                      | Unknown            |
-| 30     | 1              | `0x01`                      | Unknown            |
-| 31     | 1              | `0x01` (on) or `0x00` (off) | Midi Control-State |
-| 32     | 3              | `0x00 0x00 0x00`            | Unknown            |
+| Offset | Length (bytes) | Value                       | Description / Note  |
+|--------|----------------|-----------------------------|---------------------|
+| 0      | 1              | `0x03`                      | MAGIC Number        |
+| 1      | 1              | `0x1D`                      | Message length      |
+| 2      | 3              | `0x00 0x00 0x00`            | Seperator.          |
+| 6      | 1              | `0x01`                      |                     |
+| 7      | 1              | `0x01`                      |                     |
+| 8      | 1              | `0x01`                      |                     |
+| 9      | 1              | `0x01`                      |                     |
+| 10     | 1              | `0x0D`                      | Unknown             |
+| 11     | 16             | `transferModeType`          | ASCII Command       |
+| 27     | 1              | `0x00`                      | Null-Terminator     |
+| 28     | 1              | `0x01`                      | Unknown             |
+| 29     | 1              | `0x05`                      | Unknown             |
+| 30     | 1              | `0x01`                      | Unknown             |
+| 31     | 1              | `0x01` (on) or `0x00` (off) | Transfer Mode-State |
+| 32     | 3              | `0x00 0x00 0x00`            | Unknown             |
