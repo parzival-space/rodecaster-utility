@@ -7,7 +7,7 @@ A message has the following structure:
 
 | Offset | Length (bytes) | Example          | Description / Note                                                                                 |
 |--------|----------------|------------------|----------------------------------------------------------------------------------------------------|
-| 0      | 1              | `0x03`           | MAGIC Number                                                                                       |
+| 0      | 1              | `0x03` or `0x04` | MAGIC Number. Host-to-device `0x03` or device-to-host `0x04`.                                      |
 | 1      | 1              | `0x17`           | Message length (excluding magic, length and seperator bytes)                                       |
 | 2      | 3              | `0x00 0x00 0x00` | Seperator, always seems to be 3x `0x00`                                                            |
 | 6      | 1              | `0x01`           | Message Metadata.<br> Always `0x01` in case of control message, differs for initialization packet. |
