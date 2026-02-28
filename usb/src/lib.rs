@@ -1,13 +1,33 @@
+use crate::common::device::AttachableUsbDevice;
+use crate::rodecaster_pro_ii::device::RodeCasterProIIDevice;
+use crate::rodecaster_pro_ii::RodeCasterProII;
+use anyhow::Result;
+
 pub mod rodecaster_pro_ii;
+mod common;
 
-pub use nusb;
 
-// Vendor ID used by RODE Microphones
+/// USB Vendor ID for RODE Devices. Device specific IDs are defined in the respective device module.
 pub const VID_RODE: u16 = 0x19f7;
 
-// Product IDs for RODECASTER PRO II
-// The devices reports different product IDs based on the mode it is in.
-pub const PID_RODECASTER_PRO_II_EXTENDED: u16 = 0x0072;
-pub const PID_RODECASTER_PRO_II_EXTENDED_INPUT: u16 = 0x0078;
-pub const PID_RODECASTER_PRO_II_EXTENDED_OUTPUT: u16 = 0x0030;
-pub const PID_RODECASTER_PRO_II: u16 = 0x0037;
+
+/// Represents different types of RODE devices from the RODECaster line.
+pub enum RodeCasterDevice {
+    RodeCasterProII(Box<dyn RodeCasterProII>)
+}
+
+
+/// Manages USB devices that can be attached to the computer.
+/// The actual device implementations are in the `rodecaster_pro_ii` module, but this module can be extended in the future to support other types of devices as well.
+pub struct DeviceManager;
+impl DeviceManager {
+    pub fn open_rodecaster_device(bus_number: u8, address: u8) -> Result<RodeCasterDevice> {
+        return Ok(
+            RodeCasterDevice::RodeCasterProII(
+                Box::new(
+                    RodeCasterProIIDevice::from_address(bus_number, address)?
+                )
+            )
+        );
+    }
+}

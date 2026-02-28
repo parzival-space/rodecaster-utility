@@ -1,14 +1,15 @@
 [package]
 name = "rodecaster-usb"
-description = "USB handler for the Rodecaster Pro II, used by the rodecaster-manager"
 
 version.workspace = true
 edition.workspace = true
-authors.workspace = true
 license.workspace = true
+authors.workspace = true
 repository.workspace = true
 
 [dependencies]
-log = { workspace = true }
-nusb = { workspace = true }
+log.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
 
+rusb = "0.9.4"
