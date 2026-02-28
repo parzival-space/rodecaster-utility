@@ -1,4 +1,4 @@
-use crate::common::device::AttachableUsbDevice;
+use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
 use crate::rodecaster_pro_ii::{PID_RODECASTER_PRO_II, PID_RODECASTER_PRO_II_EXTENDED, PID_RODECASTER_PRO_II_EXTENDED_INPUT, PID_RODECASTER_PRO_II_EXTENDED_OUTPUT};
 use crate::VID_RODE;
 use anyhow::{anyhow, bail, Result};
@@ -11,6 +11,11 @@ const PIDS_RODECASTER_RRO_II: [u16; 4]  = [
     PID_RODECASTER_PRO_II_EXTENDED_INPUT,
     PID_RODECASTER_PRO_II_EXTENDED_OUTPUT
 ];
+
+// todo: not sure if this is the same interface for all PIDs
+const DEVICE_INTERFACE: u8 = 0x09;
+const DEVICE_ENDPOINT_OUT: u8 = 0x05;
+const DEVICE_ENDPOINT_IN: u8 = 0x85;
 
 // represents a rodecaster pro ii device that can be connected to using libusb.
 // this is currently the only supported use case.
@@ -51,6 +56,12 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
             .ok_or_else(|| anyhow!("Failed to read supported languages from device, maybe it's not a RODECaster Pro II?"))?
             .to_owned();
 
+        // try to claim the device interface
+        handle.set_auto_detach_kernel_driver(true)?;
+        if handle.claim_interface(DEVICE_INTERFACE).is_err() {
+            return Err(anyhow!("Failed to claim Device"))
+        }
+        
         Ok(RodeCasterProIIDevice { handle, device, device_descriptor, timeout, language })
     }
 
@@ -98,5 +109,34 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
                 Duration::from_millis(100)
             )?
         )
+    }
+}
+
+impl ExecutableUsbDevice for RodeCasterProIIDevice {
+    fn write_interrupt(&mut self, data: &[u8]) -> Result<()> {
+        if data.len() > 256 {
+            bail!("Data is too large. Maximum message size is 256 bytes.");
+        }
+
+        self.handle.write_interrupt(
+            DEVICE_ENDPOINT_OUT,
+            &data,
+            self.timeout,
+        )?;
+
+        Ok(())
+    }
+
+    fn read_interrupt(&mut self) -> Result<Vec<u8>> {
+        // messages have a max size of 256 bytes
+        let mut buffer = vec![0u8; 256];
+
+        self.handle.read_interrupt(
+            DEVICE_ENDPOINT_IN,
+            &mut buffer,
+            self.timeout
+        )?;
+
+        Ok(buffer)
     }
 }

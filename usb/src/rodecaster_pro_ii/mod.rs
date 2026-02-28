@@ -1,6 +1,6 @@
 pub mod device;
 
-use crate::common::device::AttachableUsbDevice;
+use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
 
 // USB product IDs for the RodeCaster Pro II.
 // The device reports different IDs based on the multichannel configuration.
@@ -11,6 +11,6 @@ pub const PID_RODECASTER_PRO_II: u16 = 0x0037;
 
 
 pub use device::RodeCasterProIIDevice;
-pub trait RodeCasterProII: AttachableUsbDevice {}
+pub trait RodeCasterProII: AttachableUsbDevice + ExecutableUsbDevice {}
 impl RodeCasterProII for RodeCasterProIIDevice {}
 

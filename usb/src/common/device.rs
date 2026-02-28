@@ -14,3 +14,8 @@ pub trait AttachableUsbDevice {
 
     fn get_serial_number_string(&self) -> Result<String>;
 }
+
+pub trait ExecutableUsbDevice: AttachableUsbDevice {
+    fn write_interrupt(&mut self, data: &[u8]) -> Result<()>;
+    fn read_interrupt(&mut self) -> Result<Vec<u8>>;
+}
