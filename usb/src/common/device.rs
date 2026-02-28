@@ -2,6 +2,8 @@ use anyhow::Result;
 
 pub trait AttachableUsbDevice {
     fn from_address(bus_number: u8, address: u8) -> Result<Self> where Self: Sized;
+    
+    fn is_supported(bus_number: u8, address: u8) -> bool where Self: Sized;
 
     fn get_bus_number(&self) -> u8;
     fn get_address(&self) -> u8;

@@ -9,8 +9,8 @@ pub const PID_RODECASTER_PRO_II_EXTENDED_INPUT: u16 = 0x0078;
 pub const PID_RODECASTER_PRO_II_EXTENDED_OUTPUT: u16 = 0x0030;
 pub const PID_RODECASTER_PRO_II: u16 = 0x0037;
 
-
 pub use device::RodeCasterProIIDevice;
+
 pub trait RodeCasterProII: AttachableUsbDevice + ExecutableUsbDevice {}
 impl RodeCasterProII for RodeCasterProIIDevice {}
 

@@ -11,12 +11,11 @@ pub enum RodeCasterDevice {
 pub struct DeviceManager;
 impl DeviceManager {
     pub fn open_rodecaster_device(bus_number: u8, address: u8) -> anyhow::Result<RodeCasterDevice> {
-        return Ok(
-            RodeCasterDevice::RodeCasterProII(
-                Box::new(
-                    RodeCasterProIIDevice::from_address(bus_number, address)?
-                )
-            )
-        );
+        if RodeCasterProIIDevice::is_supported(bus_number, address) {
+            let device = RodeCasterProIIDevice::from_address(bus_number, address)?;
+            Ok(RodeCasterDevice::RodeCasterProII(Box::new(device)))
+        } else {
+            anyhow::bail!("No supported device found at bus {} and address {}", bus_number, address);
+        }
     }
 }

@@ -6,6 +6,6 @@ pub mod rodecaster_pro_ii;
 /// Device specific IDs are defined in the respective device module.
 pub const VID_RODE: u16 = 0x19f7;
 
-// reexport device manager
+// re-export device manager
 pub use device_manager::DeviceManager;
 pub use device_manager::RodeCasterDevice;

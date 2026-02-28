@@ -4,6 +4,7 @@ use crate::VID_RODE;
 use anyhow::{anyhow, bail, Result};
 use rusb::{Device, DeviceDescriptor, DeviceHandle, GlobalContext, Language, UsbContext};
 use std::time::Duration;
+use log::debug;
 
 const PIDS_RODECASTER_RRO_II: [u16; 4]  = [
     PID_RODECASTER_PRO_II,
@@ -33,6 +34,10 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
         let devices = context.devices()?;
         let timeout = Duration::from_secs(1);
 
+        if !Self::is_supported(bus_number, address) {
+            bail!("The device at bus {} and address {} is not a RODECaster Pro II", bus_number, address);
+        }
+
         // try reading the device at the given address and bus number
         let Some(device) = devices.iter().find(
             |device| device.bus_number() == bus_number && device.address() == address) else {
@@ -41,12 +46,6 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
 
         let Ok(device_descriptor) = device.device_descriptor() else {
             bail!("Failed to read device descriptor, this might not be a RODECaster Pro II");
-        };
-
-        // ensure the detected device is actually a RODECaster Pro II by checking the vendor and product IDs
-        if VID_RODE != device_descriptor.vendor_id() || !PIDS_RODECASTER_RRO_II.contains(&device_descriptor.product_id()) {
-            bail!("The device at bus {} and address {} is not a RODECaster Pro II, unexpected vendor or product ID: {:04x}:{:04x}",
-                bus_number, address, device_descriptor.vendor_id(), device_descriptor.product_id());
         };
 
         let handle = device.open()?;
@@ -59,10 +58,29 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
         // try to claim the device interface
         handle.set_auto_detach_kernel_driver(true)?;
         if handle.claim_interface(DEVICE_INTERFACE).is_err() {
-            return Err(anyhow!("Failed to claim Device"))
+            bail!("Failed to claim Device")
         }
-        
+
         Ok(RodeCasterProIIDevice { handle, device, device_descriptor, timeout, language })
+    }
+
+    fn is_supported(bus_number: u8, address: u8) -> bool {
+        let context = GlobalContext::default();
+        let Ok(devices) = context.devices() else {
+            return false;
+        };
+        
+        let Some(device) = devices.iter().find(
+            |device| device.bus_number() == bus_number && device.address() == address) else {
+            return false;
+        };
+
+        let Ok(device_descriptor) = device.device_descriptor() else {
+            return false;
+        };
+
+        // ensure the detected device is actually a RODECaster Pro II by checking the vendor and product IDs
+        VID_RODE == device_descriptor.vendor_id() && PIDS_RODECASTER_RRO_II.contains(&device_descriptor.product_id())
     }
 
     fn get_bus_number(&self) -> u8 {
