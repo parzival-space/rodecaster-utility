@@ -69,4 +69,34 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
     fn get_product_id(&self) -> u16 {
         self.device_descriptor.product_id()
     }
+
+    fn get_manufacturer_string(&self) -> Result<String> {
+        Ok(
+            self.handle.read_manufacturer_string(
+                self.language,
+                &self.device_descriptor,
+                Duration::from_millis(100)
+            )?
+        )
+    }
+
+    fn get_product_string(&self) -> Result<String> {
+        Ok(
+            self.handle.read_product_string(
+                self.language,
+                &self.device_descriptor,
+                Duration::from_millis(100)
+            )?
+        )
+    }
+
+    fn get_serial_number_string(&self) -> Result<String> {
+        Ok(
+            self.handle.read_serial_number_string(
+                self.language,
+                &self.device_descriptor,
+                Duration::from_millis(100)
+            )?
+        )
+    }
 }

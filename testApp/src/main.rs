@@ -31,4 +31,11 @@ fn main() {
     println!("Opened rodecaster Pro II");
     println!("RodeCaster Pro II connected at bus {} and address {}", rodecaster.get_bus_number(), rodecaster.get_address());
     println!("Vendor ID: {:04x}, Product ID: {:04x}", rodecaster.get_vendor_id(), rodecaster.get_product_id());
+    println!("Manufacturer: {}, Product: {}",
+        rodecaster.get_manufacturer_string().expect("Failed to read manufacturer string"),
+        rodecaster.get_product_string().expect("Failed to read product string")
+    );
+    println!("Serial Number: {}",
+        rodecaster.get_serial_number_string().expect("Failed to read serial number string")
+    );
 }
