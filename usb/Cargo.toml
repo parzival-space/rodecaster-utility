@@ -11,5 +11,4 @@ repository.workspace = true
 log.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
-
-rusb = "0.9.4"
+rusb.workspace = true

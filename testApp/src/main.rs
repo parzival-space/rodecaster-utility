@@ -1,5 +1,3 @@
-use std::thread::sleep;
-use std::time::Duration;
 use log::{info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use rodecaster_usb::{DeviceManager, RodeCasterDevice};
@@ -10,20 +8,6 @@ fn main() {
             TermLogger::new(LevelFilter::Trace, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
         ]
     ).unwrap();
-    //
-    // let deviceInfo = list_devices().wait()?
-    //     .find(|dev| dev.vendor_id() == VID_RODE && dev.product_id() == PID_RODECASTER_PRO_II_EXTENDED)
-    //     .ok_or("Rodecaster Pro II not found").unwrap();
-    //
-    // let mut rodecaster = RodecasterProII::open(deviceInfo)
-    //     .expect("Failed to open Rodecaster Pro II");
-    //
-    // // log all input reads
-    // loop {
-    //     let mut buf = rodecaster.read_interrupt()
-    //         .expect("Failed to read from Rodecaster Pro II");
-    //     debug!("Received data: {:?}", buf);
-    // }
 
     let device = DeviceManager::open_rodecaster_device(1, 14)
         .expect("Failed to open Rodecaster Pro II");

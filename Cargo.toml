@@ -21,3 +21,5 @@ repository = "https://github.com/parzival-space/rodecaster-utility"
 log = "0.4.29"
 thiserror = "2.0.18"
 anyhow = "1.0.102"
+
+rusb = "0.9.4"
