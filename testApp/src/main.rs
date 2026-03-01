@@ -1,3 +1,5 @@
+use std::thread::sleep;
+use std::time::Duration;
 use log::{info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use rodecaster_usb::{DeviceManager, RodeCasterDevice};
@@ -9,7 +11,7 @@ fn main() {
         ]
     ).unwrap();
 
-    let device = DeviceManager::open_rodecaster_device(1, 14)
+    let device = DeviceManager::open_rodecaster_device(1, 17)
         .expect("Failed to open Rodecaster Pro II");
 
     let RodeCasterDevice::RodeCasterProII(mut rodecaster) = device else {
@@ -26,18 +28,18 @@ fn main() {
     info!("Serial Number: {}",
         rodecaster.get_serial_number_string().expect("Failed to read serial number string")
     );
-    //
-    // sleep(Duration::from_secs(1));
-    // let mut continue_reading = true;
-    // while continue_reading {
-    //     let data = rodecaster.read_interrupt();
-    //     continue_reading = data.is_ok();
-    //
-    //     if (data.is_err()) {
-    //         info!("Failed to read from device, maybe it was disconnected? Error: {:?}", data.err());
-    //         break;
-    //     } else {
-    //         info!("Received data: {:?}", data.unwrap());
-    //     }
-    // }
+
+    sleep(Duration::from_secs(2));
+    let mut continue_reading = true;
+    while continue_reading {
+        let data = rodecaster.read_interrupt();
+        continue_reading = data.is_ok();
+
+        if (data.is_err()) {
+            info!("Failed to read from device, maybe it was disconnected? Error: {:?}", data.err());
+            break;
+        } else {
+            info!("Received data: {:?}", data.unwrap());
+        }
+    }
 }

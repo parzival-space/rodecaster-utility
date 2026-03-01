@@ -4,7 +4,7 @@ use crate::VID_RODE;
 use anyhow::{anyhow, bail, Result};
 use rusb::{Device, DeviceDescriptor, DeviceHandle, GlobalContext, Language, UsbContext};
 use std::time::Duration;
-use log::debug;
+use log::{debug, warn};
 use crate::rodecaster_pro_ii::command::RodeCasterProIIExecutable;
 
 const PIDS_RODECASTER_RRO_II: [u16; 4]  = [
@@ -61,9 +61,15 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
         if handle.claim_interface(DEVICE_INTERFACE).is_err() {
             bail!("Failed to claim Device")
         }
-        
+        if (handle.set_alternate_setting(DEVICE_INTERFACE, 0x00).is_err()) {
+            warn!("Failed to set alternate setting for device interface.");
+        }
+        if (handle.clear_halt(DEVICE_ENDPOINT_IN).is_err() || handle.clear_halt(DEVICE_ENDPOINT_OUT).is_err()) {
+            warn!("Failed to clear halt on device endpoints, maybe the device is not responding?");
+        }
+
         let mut rodecaster_device = RodeCasterProIIDevice { handle, device, device_descriptor, timeout, language };
-        
+
         debug!("Successfully connected to RODECaster Pro II. Initializing device...");
         rodecaster_device.request_device_status()?;
 
