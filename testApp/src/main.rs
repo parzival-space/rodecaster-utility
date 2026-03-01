@@ -42,10 +42,6 @@ fn main() {
     info!("Serial Number: {}",
         rodecaster.get_serial_number_string().expect("Failed to read serial number string")
     );
-
-    // sleep(Duration::from_secs(1));
-    // rodecaster.write_interrupt(&[0x03, 0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0]);
-    // info!("Sent init message");
     //
     // sleep(Duration::from_secs(1));
     // let mut continue_reading = true;

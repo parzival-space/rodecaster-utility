@@ -1,4 +1,5 @@
 pub mod device;
+pub mod command;
 
 use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
 
@@ -10,7 +11,8 @@ pub const PID_RODECASTER_PRO_II_EXTENDED_OUTPUT: u16 = 0x0030;
 pub const PID_RODECASTER_PRO_II: u16 = 0x0037;
 
 pub use device::RodeCasterProIIDevice;
+use crate::rodecaster_pro_ii::command::RodeCasterProIIExecutable;
 
-pub trait RodeCasterProII: AttachableUsbDevice + ExecutableUsbDevice {}
+pub trait RodeCasterProII: AttachableUsbDevice + ExecutableUsbDevice + RodeCasterProIIExecutable {}
 impl RodeCasterProII for RodeCasterProIIDevice {}
 

@@ -5,6 +5,7 @@ use anyhow::{anyhow, bail, Result};
 use rusb::{Device, DeviceDescriptor, DeviceHandle, GlobalContext, Language, UsbContext};
 use std::time::Duration;
 use log::debug;
+use crate::rodecaster_pro_ii::command::RodeCasterProIIExecutable;
 
 const PIDS_RODECASTER_RRO_II: [u16; 4]  = [
     PID_RODECASTER_PRO_II,
@@ -60,8 +61,13 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
         if handle.claim_interface(DEVICE_INTERFACE).is_err() {
             bail!("Failed to claim Device")
         }
+        
+        let mut rodecaster_device = RodeCasterProIIDevice { handle, device, device_descriptor, timeout, language };
+        
+        debug!("Successfully connected to RODECaster Pro II. Initializing device...");
+        rodecaster_device.request_device_status()?;
 
-        Ok(RodeCasterProIIDevice { handle, device, device_descriptor, timeout, language })
+        Ok(rodecaster_device)
     }
 
     fn is_supported(bus_number: u8, address: u8) -> bool {
