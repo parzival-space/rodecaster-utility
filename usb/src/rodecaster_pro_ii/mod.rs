@@ -14,8 +14,7 @@ pub use device::RodeCasterProIIDevice;
 use crate::rodecaster_pro_ii::command::RodeCasterProIIExecutable;
 
 impl RodeCasterProII for RodeCasterProIIDevice {}
-pub trait RodeCasterProII: 
-    AttachableUsbDevice + 
+pub trait RodeCasterProII:
     ExecutableUsbDevice +
     RodeCasterProIIExecutable {}
 

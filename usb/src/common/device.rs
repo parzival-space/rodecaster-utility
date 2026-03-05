@@ -1,23 +1,22 @@
 use anyhow::Result;
+use hidapi::{DeviceInfo, HidApi};
 
 pub trait AttachableUsbDevice {
-    fn from_address(bus_number: u8, address: u8) -> Result<Self> where Self: Sized;
-    
-    fn is_supported(bus_number: u8, address: u8) -> bool where Self: Sized;
+    fn open(api: &mut HidApi, serial: &str) -> Result<Self> where Self: Sized;
 
-    fn get_bus_number(&self) -> u8;
-    fn get_address(&self) -> u8;
+    /// Checks if the give device [`DeviceInfo`] is supported by this implementation.
+    fn is_device_supported(device: &DeviceInfo) -> bool where Self: Sized;
 
     fn get_vendor_id(&self) -> u16;
     fn get_product_id(&self) -> u16;
 
-    fn get_manufacturer_string(&self) -> Result<String>;
-    fn get_product_string(&self) -> Result<String>;
+    fn get_manufacturer_string(&self) -> Option<&str>;
+    fn get_product_string(&self) -> Option<&str>;
 
-    fn get_serial_number_string(&self) -> Result<String>;
+    fn get_serial_number_string(&self) -> Option<&str>;
 }
 
 pub trait ExecutableUsbDevice: AttachableUsbDevice {
-    fn write_interrupt(&mut self, data: &[u8]) -> Result<()>;
-    fn read_interrupt(&mut self) -> Result<Vec<u8>>;
+    fn write(&mut self, data: &[u8]) -> Result<()>;
+    fn read(&mut self) -> Result<Vec<u8>>;
 }

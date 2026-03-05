@@ -11,4 +11,4 @@ repository.workspace = true
 log.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
-rusb.workspace = true
+hidapi.workspace = true

@@ -1,5 +1,9 @@
+use std::ptr::null;
+use hidapi::{DeviceInfo, HidApi};
+use anyhow::Result;
 use crate::common::device::AttachableUsbDevice;
 use crate::rodecaster_pro_ii::{RodeCasterProII, RodeCasterProIIDevice};
+use crate::VID_RODE;
 
 /// Represents different types of RODE devices from the RODECaster line.
 pub enum RodeCasterDevice {
@@ -8,14 +12,42 @@ pub enum RodeCasterDevice {
 
 /// Manages USB devices that can be attached to the computer.
 /// The actual device implementations are in the `rodecaster_pro_ii` module, but this module can be extended in the future to support other types of devices as well.
-pub struct DeviceManager;
+pub struct DeviceManager {
+    hid_api: HidApi,
+}
 impl DeviceManager {
-    pub fn open_rodecaster_device(bus_number: u8, address: u8) -> anyhow::Result<RodeCasterDevice> {
-        if RodeCasterProIIDevice::is_supported(bus_number, address) {
-            let device = RodeCasterProIIDevice::from_address(bus_number, address)?;
-            Ok(RodeCasterDevice::RodeCasterProII(Box::new(device)))
-        } else {
-            anyhow::bail!("No supported device found at bus {} and address {}", bus_number, address);
-        }
+    pub fn new() -> Result<Self> {
+        Ok(DeviceManager {
+            hid_api: HidApi::new()?
+        })
+    }
+
+    pub fn list_devices(&mut self) -> Result<Vec<String>> {
+        self.hid_api.refresh_devices()?;
+
+        Ok(
+            self.hid_api.device_list()
+                .filter(|device| device.vendor_id() == VID_RODE) // Only list RODE devices
+                .filter(|device| device.serial_number().is_some())
+                .filter_map(|device| {
+                    match device {
+                        device if RodeCasterProIIDevice::is_device_supported(device) => {
+                            Some(device.serial_number().unwrap().to_owned())
+                        }
+                        _ => {
+                            None
+                        }
+                    }
+                })
+                .collect::<Vec<String>>()
+        )
+    }
+    
+    pub fn open_rodecaster_device(&mut self, serial: &str) -> Result<RodeCasterDevice> {
+        self.hid_api.refresh_devices()?;
+
+        Ok(RodeCasterDevice::RodeCasterProII(
+            Box::new(RodeCasterProIIDevice::open(&mut self.hid_api, serial)?)
+        ))
     }
 }
