@@ -14,9 +14,7 @@ pub trait RodeCasterProIIExecutable: ExecutableUsbDevice {
     fn request_device_status(&mut self) -> Result<()> {
         info!("Value: {}", 0x69C90100);
 
-        self.write(&[
-            0x03, 0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0
-        ])
+        self.write(vec![0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0])
     }
 }
 

@@ -7,6 +7,9 @@ use std::time::Duration;
 use log::{debug, warn};
 use crate::rodecaster_pro_ii::command::RodeCasterProIIExecutable;
 
+const HID_REPORT_ID_SEND: u8 = 0x03;
+const HID_REPORT_ID_RECEIVE: u8 = 0x04;
+
 pub struct RodeCasterProIIDevice {
     device: HidDevice,
     device_info: DeviceInfo,
@@ -27,6 +30,8 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
                 bail!("Failed to open RODECaster Pro II with Serial {}: {}", serial, e);
             }
         };
+
+        device.set_blocking_mode(true)?;
 
         let mut rodecaster_device = RodeCasterProIIDevice { device, device_info: device_info.clone() };
 
@@ -68,12 +73,18 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
 }
 
 impl ExecutableUsbDevice for RodeCasterProIIDevice {
-    fn write(&mut self, data: &[u8]) -> Result<()> {
-        if data.len() > 256 {
-            bail!("Data is too large. Maximum message size is 256 bytes.");
+    fn write(&mut self, data: Vec<u8>) -> Result<()> {
+        if data.len() > 255 {
+            bail!("Data length exceeds maximum allowed size of 255 bytes");
         }
 
-        match self.device.write(&data) {
+        // messages has a size of 256 bytes, but the first byte is reserved for the report ID.
+        let mut buffer = vec![0u8; 256];
+        buffer[0] = HID_REPORT_ID_SEND;
+        buffer[1..(data.len() + 1)].copy_from_slice(&data);
+
+        debug!("Writing report with id ({}), data: {:02x?}", buffer[0], buffer[1..].to_vec());
+        match self.device.write(&buffer) {
             Ok(_) => Ok(()),
             Err(e) => {
                 Err(anyhow!("Failed to write message: {}", e))
@@ -84,11 +95,21 @@ impl ExecutableUsbDevice for RodeCasterProIIDevice {
     fn read(&mut self) -> Result<Vec<u8>> {
         // messages have a max size of 256 bytes
         let mut buffer = vec![0u8; 256];
+        buffer[0] = HID_REPORT_ID_RECEIVE;
 
         match self.device.read(&mut buffer) {
-            Ok(_) => Ok(buffer),
+            Ok(length) => {
+                if length != buffer.len() || buffer[0] != HID_REPORT_ID_RECEIVE {
+                    bail!("Received message with unexpected length or report ID. Expected length: {}, actual length: {}, expected report ID: {}, actual report ID: {}",
+                        buffer.len(), length, HID_REPORT_ID_RECEIVE, buffer[0]);
+                }
+
+                // success, return buffer without the first byte
+                debug!("Read report with id ({}), data: {:02x?}", buffer[0], buffer[1..].to_vec());
+                Ok(buffer[1..].to_vec())
+            },
             Err(e) => {
-                Err(anyhow!("Failed to read message: {}", e))
+                bail!("Failed to read message: {}", e)
             }
         }
     }

@@ -17,6 +17,6 @@ pub trait AttachableUsbDevice {
 }
 
 pub trait ExecutableUsbDevice: AttachableUsbDevice {
-    fn write(&mut self, data: &[u8]) -> Result<()>;
+    fn write(&mut self, data: Vec<u8>) -> Result<()>;
     fn read(&mut self) -> Result<Vec<u8>>;
 }

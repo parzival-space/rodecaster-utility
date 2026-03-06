@@ -1,7 +1,7 @@
 use std::fs;
 use std::thread::sleep;
 use std::time::Duration;
-use log::{info, LevelFilter};
+use log::{debug, info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use rodecaster_usb::{DeviceManager, RodeCasterDevice};
 
@@ -49,12 +49,12 @@ fn main() {
             info!("Failed to read from device, maybe it was disconnected? Error: {:?}", data.err());
             break;
         } else {
-            // info!("Read data (index {})", index);
-            // // write bytes into file init_XX.bin, notice the double digits in the file name, so that the files are sorted by index when listed in a directory
-            //
+            debug!("Message #{}", index);
+            // write bytes into file init_XX.bin, notice the double digits in the file name, so that the files are sorted by index when listed in a directory
+
             // fs::write(format!("init_{:02}.bin", index), data.unwrap())
             //     .expect("Failed to write data to file");
-            // index += 1;
+            index += 1;
         }
     }
 }
