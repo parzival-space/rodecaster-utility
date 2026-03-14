@@ -49,7 +49,7 @@ fn main() {
             info!("Failed to read from device, maybe it was disconnected? Error: {:?}", data.err());
             break;
         } else {
-            debug!("Message #{}", index);
+            // debug!("Message #{}", index);
             // write bytes into file init_XX.bin, notice the double digits in the file name, so that the files are sorted by index when listed in a directory
 
             // fs::write(format!("init_{:02}.bin", index), data.unwrap())

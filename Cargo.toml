@@ -22,4 +22,8 @@ log = "0.4.29"
 thiserror = "2.0.18"
 anyhow = "1.0.102"
 
+tokio = "1.50.0"
+
+# usb stuff
+byteorder = "1.5.0"
 hidapi = { version = "2.6.5", features = ["linux-static-hidraw"] }
