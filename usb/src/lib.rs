@@ -8,4 +8,4 @@ pub const VID_RODE: u16 = 0x19f7;
 
 // re-export device manager
 pub use device_manager::DeviceManager;
-pub use device_manager::RodeCasterDevice;
+pub use device_manager::DeviceIdentifier;
