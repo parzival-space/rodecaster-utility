@@ -45,7 +45,7 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
         let hid_api = HidApi::new()?;
         let loop_device_info = device_info.clone();
         thread::spawn(move ||
-            RodeCasterProIIDevice::begin_read_loop(loop_device_info, hid_api)
+            RodeCasterProIIUsbReportHandler::begin_read_loop(loop_device_info, hid_api)
         );
 
         debug!("Successfully connected to RODECaster Pro II. Initializing device...");
@@ -115,7 +115,8 @@ impl ExecutableUsbDevice for RodeCasterProIIDevice {
     }
 }
 
-impl RodeCasterProIIDevice {
+struct RodeCasterProIIUsbReportHandler {}
+impl RodeCasterProIIUsbReportHandler {
 
     fn read_next_message(device: &HidDevice) -> Result<Vec<u8>> {
         // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
@@ -170,14 +171,13 @@ impl RodeCasterProIIDevice {
             }
         };
 
-        // continuously read incoming messages from the device in a separate thread
         loop {
             // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
             let mut report_buffer = vec![0u8; 256];
             report_buffer[0] = HID_REPORT_ID_RECEIVE;
 
             // read new incoming messages from the device
-            match RodeCasterProIIDevice::read_next_message(&device) {
+            match RodeCasterProIIUsbReportHandler::read_next_message(&device) {
                 Ok(message_buffer) => {
                     debug!("Received message from device: {:02x?}", message_buffer);
                 }
