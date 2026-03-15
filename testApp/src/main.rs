@@ -1,10 +1,11 @@
 use std::fs;
 use std::thread::sleep;
 use std::time::Duration;
-use log::{debug, info, LevelFilter};
+use log::{debug, error, info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
-use rodecaster_usb::{DeviceManager, DeviceIdentifier};
+use rodecaster_usb::{DeviceManager, DeviceIdentifier, DeviceType, HotPlugDeviceEvent, OpenDeviceResult};
 use crossbeam::channel::{bounded, };
+use rodecaster_usb::DeviceType::RodeCasterProII;
 
 fn main() {
     CombinedLogger::init(
@@ -19,13 +20,27 @@ fn main() {
         .expect("Failed to create device manager");
 
     loop {
-        let Ok(new_device) = device_receiver.recv() else {
+        let Ok(hotplug_event) = device_receiver.recv() else {
             debug!("Device manager thread has been terminated. Exiting main loop.");
             break;
         };
 
-        info!("New device received: {:?}", new_device);
+        info!("New device received: {:?}", hotplug_event);
         info!("Current connected devices: {:?}", device_manager.get_devices().len());
+
+        match hotplug_event {
+            HotPlugDeviceEvent::DeviceAttached(device) => {
+                match DeviceManager::open_device(device) {
+                    OpenDeviceResult::RodeCasterProII(device) => {
+                        debug!("Successfully opened RodeCaster Pro II device: {:?}", device.get_device_info());
+                    }
+                    OpenDeviceResult::Err(error) => error!("Failed to open RodeCaster Pro II device: {:?}", error),
+                }
+            }
+            HotPlugDeviceEvent::DeviceRemoved(_) => {
+
+            },
+        }
     }
 
 

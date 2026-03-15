@@ -11,7 +11,6 @@ repository.workspace = true
 log.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
-tokio = { workspace = true, features = ["sync"] }
 hidapi.workspace = true
 byteorder.workspace = true
 crossbeam.workspace = true

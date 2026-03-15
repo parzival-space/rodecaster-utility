@@ -1,13 +1,11 @@
 use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
 use crate::rodecaster_pro_ii::command::RodeCasterProIIExecutable;
-use crate::rodecaster_pro_ii::{PID_RODECASTER_PRO_II, PID_RODECASTER_PRO_II_DYNAMIC_EXTENDED, PID_RODECASTER_PRO_II_DYNAMIC_EXTENDED_OUTPUT, PID_RODECASTER_PRO_II_EXTENDED, PID_RODECASTER_PRO_II_EXTENDED_INPUT, PID_RODECASTER_PRO_II_EXTENDED_OUTPUT};
-use crate::VID_RODE;
+use crate::{DeviceIdentifier, VID_RODE};
 use anyhow::{anyhow, bail, Result};
 use byteorder::ReadBytesExt;
 use hidapi::{DeviceInfo, HidApi, HidDevice, HidResult};
-use log::{debug, warn};
+use log::{debug, error, warn};
 use std::io::{Cursor, Read};
-use tokio::sync::{broadcast, mpsc};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
@@ -16,107 +14,41 @@ const HID_REPORT_ID_SEND: u8 = 0x03;
 const HID_REPORT_ID_RECEIVE: u8 = 0x04;
 
 pub struct RodeCasterProIIDevice {
-    device: HidDevice,
-    device_info: DeviceInfo,
-
+    device_identifier: DeviceIdentifier
 }
 
 impl AttachableUsbDevice for RodeCasterProIIDevice {
-    fn open(api: &mut HidApi, serial: &str) -> Result<Self> {
-        let device_info = api.device_list()
-            .find(|device|
-                VID_RODE.eq(&device.vendor_id()) &&
-                    Self::is_device_supported(device) == true &&
-                device.serial_number().map_or(false, |s| serial.eq(s)))
-            .ok_or_else(|| anyhow!("No RODECaster Pro II found with Serial {}", serial))?;
+    fn open(device_identifier: DeviceIdentifier) -> Result<RodeCasterProIIDevice> {
+        let device_identifier_clone = device_identifier.clone();
+        thread::spawn(move || {
+            let Ok(hid_api) = HidApi::new() else {
+                error!("Failed to initialize HID API for device read loop.");
+                return;
+            };
+            Self::begin_read_loop(device_identifier_clone.device_info, hid_api);
+        });
 
-        let device = match device_info.open_device(&api) {
-            Ok(device) => device,
-            Err(e) => {
-                bail!("Failed to open RODECaster Pro II with Serial {}: {}", serial, e);
-            }
-        };
-
-        let mut rodecaster_device = RodeCasterProIIDevice {
-            device,
-            device_info: device_info.clone()
-        };
-
-        let hid_api = HidApi::new()?;
-        let loop_device_info = device_info.clone();
-        thread::spawn(move ||
-            RodeCasterProIIUsbReportHandler::begin_read_loop(loop_device_info, hid_api)
-        );
-
-        debug!("Successfully connected to RODECaster Pro II. Initializing device...");
-        rodecaster_device.request_device_status()?;
-
-        Ok(rodecaster_device)
+        Ok(RodeCasterProIIDevice { device_identifier })
     }
 
-    fn is_device_supported(device: &DeviceInfo) -> bool
-    where
-        Self: Sized
-    {
-        // multitrack devices
-        PID_RODECASTER_PRO_II.eq(&device.product_id()) ||
-        PID_RODECASTER_PRO_II_EXTENDED.eq(&device.product_id()) ||
-        PID_RODECASTER_PRO_II_EXTENDED_INPUT.eq(&device.product_id()) ||
-        PID_RODECASTER_PRO_II_EXTENDED_OUTPUT.eq(&device.product_id()) ||
-        // 1.7.3 dynamic multitrack devices
-        PID_RODECASTER_PRO_II_DYNAMIC_EXTENDED.eq(&device.product_id()) ||
-        PID_RODECASTER_PRO_II_DYNAMIC_EXTENDED_OUTPUT.eq(&device.product_id())
-    }
-
-    fn get_vendor_id(&self) -> u16 {
-        self.device_info.vendor_id()
-    }
-
-    fn get_product_id(&self) -> u16 {
-        self.device_info.product_id()
-    }
-
-    fn get_manufacturer_string(&self) -> Option<&str> {
-        self.device_info.manufacturer_string()
-    }
-
-    fn get_product_string(&self) -> Option<&str> {
-        self.device_info.product_string()
-    }
-
-    fn get_serial_number_string(&self) -> Option<&str> {
-        self.device_info.serial_number()
+    fn get_device_info(&self) -> DeviceInfo {
+        self.device_identifier.device_info.clone()
     }
 }
 
 impl ExecutableUsbDevice for RodeCasterProIIDevice {
     fn write(&mut self, data: Vec<u8>) -> Result<()> {
-        if data.len() > 255 {
-            bail!("Data length exceeds maximum allowed size of 255 bytes");
-        }
-
-        // messages has a size of 256 bytes, but the first byte is reserved for the report ID.
-        let mut buffer = vec![0u8; 256];
-        buffer[0] = HID_REPORT_ID_SEND;
-        buffer[1..(data.len() + 1)].copy_from_slice(&data);
-
-        debug!("Writing report with id ({}), data: {:02x?}", buffer[0], buffer[1..].to_vec());
-        match self.device.write(&buffer) {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                Err(anyhow!("Failed to write message: {}", e))
-            }
-        }
+        // todo: implement this
+        Ok(())
     }
 
     fn read(&mut self) -> Result<Vec<u8>> {
-        sleep(Duration::from_millis(100)); // wait a bit to give the read loop time to read incoming messages
+        // todo: implement this
         Ok(Vec::new())
     }
 }
 
-struct RodeCasterProIIUsbReportHandler {}
-impl RodeCasterProIIUsbReportHandler {
+impl RodeCasterProIIDevice {
 
     fn read_next_message(device: &HidDevice) -> Result<Vec<u8>> {
         // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
@@ -171,13 +103,19 @@ impl RodeCasterProIIUsbReportHandler {
             }
         };
 
+        // todo: remove this, this is just for testing purpose until the send implementation is fixed
+        let Ok(_) = device.send_output_report(&*vec![HID_REPORT_ID_SEND, 0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0]) else {
+            warn!("Failed to write initial message to device");
+            return;
+        };
+
         loop {
             // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
             let mut report_buffer = vec![0u8; 256];
             report_buffer[0] = HID_REPORT_ID_RECEIVE;
 
             // read new incoming messages from the device
-            match RodeCasterProIIUsbReportHandler::read_next_message(&device) {
+            match Self::read_next_message(&device) {
                 Ok(message_buffer) => {
                     debug!("Received message from device: {:02x?}", message_buffer);
                 }

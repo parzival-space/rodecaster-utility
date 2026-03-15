@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Error, Result};
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
 use log::{error, warn};
@@ -7,6 +7,9 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use crate::common::device::AttachableUsbDevice;
+use crate::rodecaster_pro_ii::RodeCasterProIIDevice;
+use crate::RodeCasterProII;
 
 pub(crate) const VID_RODE: u16 = 0x19f7;
 pub(crate) const PID_RODECASTER_PRO_II: &[u16] = &[0x0037, 0x0072, 0x0078, 0x0030, 0x0094, 0x0092];
@@ -18,8 +21,8 @@ pub enum DeviceType {
 
 #[derive(Debug, Clone)]
 pub struct DeviceIdentifier {
-    device_type: DeviceType,
-    device_info: DeviceInfo
+    pub device_type: DeviceType,
+    pub(crate) device_info: DeviceInfo
 }
 
 impl PartialEq for DeviceIdentifier {
@@ -41,6 +44,11 @@ pub enum HotPlugThreadManagement {
 pub enum HotPlugDeviceEvent {
     DeviceAttached(DeviceIdentifier),
     DeviceRemoved(DeviceIdentifier)
+}
+
+pub enum OpenDeviceResult {
+    RodeCasterProII(Box<dyn RodeCasterProII>),
+    Err(Error),
 }
 
 /// Manages connected devices and detects hotplug events for all supported RODECaster devices.
@@ -79,6 +87,17 @@ impl DeviceManager {
         });
 
         Ok(Self { hid_api, devices, sender, receiver })
+    }
+    
+    pub fn open_device(device_identifier: DeviceIdentifier) -> OpenDeviceResult {
+        match device_identifier.device_type {
+            DeviceType::RodeCasterProII => {
+                match RodeCasterProIIDevice::open(device_identifier) {
+                    Ok(device) => OpenDeviceResult::RodeCasterProII(Box::new(device)),
+                    Err(error) => OpenDeviceResult::Err(error)
+                }
+            }
+        }
     }
 
     /// Returns a list of currently connected devices.
