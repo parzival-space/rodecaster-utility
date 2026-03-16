@@ -109,6 +109,7 @@ impl RodeCasterProIIDevice {
             return;
         };
 
+        let mut failed_read_attempts: u8 = 0;
         loop {
             // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
             let mut report_buffer = vec![0u8; 256];
@@ -117,10 +118,17 @@ impl RodeCasterProIIDevice {
             // read new incoming messages from the device
             match Self::read_next_message(&device) {
                 Ok(message_buffer) => {
+                    failed_read_attempts = 0;
                     debug!("Received message from device: {:02x?}", message_buffer);
                 }
                 Err(e) => {
                     warn!("Failed to read message from device: {}", e);
+                    if failed_read_attempts >= 5 {
+                        error!("Quitting read loop after 5 failed read attempts.");
+                        break;
+                    }
+
+                    failed_read_attempts = failed_read_attempts + 1;
                 }
             }
         }
