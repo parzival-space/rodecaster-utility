@@ -54,7 +54,7 @@ pub enum OpenDeviceResult {
 /// Manages connected devices and detects hotplug events for all supported RODECaster devices.
 pub struct DeviceManager {
     hid_api: HidApi,
-    devices: Arc<Mutex<Vec<(DeviceIdentifier)>>>,
+    devices: Arc<Mutex<Vec<DeviceIdentifier>>>,
     sender: Sender<HotPlugDeviceEvent>,
     receiver: Receiver<HotPlugThreadManagement>
 }
