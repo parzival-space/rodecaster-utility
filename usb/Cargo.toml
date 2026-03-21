@@ -9,8 +9,8 @@ repository.workspace = true
 
 [dependencies]
 log.workspace = true
-thiserror.workspace = true
 anyhow.workspace = true
 hidapi.workspace = true
 byteorder.workspace = true
 crossbeam.workspace = true
+nom.workspace = true

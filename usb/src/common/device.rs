@@ -1,5 +1,5 @@
 use anyhow::Result;
-use hidapi::{DeviceInfo, HidApi};
+use hidapi::{DeviceInfo};
 use crate::DeviceIdentifier;
 
 pub trait AttachableUsbDevice {
