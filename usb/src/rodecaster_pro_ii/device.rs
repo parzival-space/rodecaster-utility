@@ -1,8 +1,8 @@
 use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
 use crate::{DeviceIdentifier};
-use anyhow::{Result};
-use byteorder::{ReadBytesExt};
-use hidapi::{DeviceInfo, HidApi, HidDevice};
+use anyhow::{anyhow, Result};
+use byteorder::{LittleEndian, ReadBytesExt};
+use hidapi::{DeviceInfo, HidApi, HidDevice, HidResult};
 use log::{error, info, warn};
 use std::io::{Cursor, Read};
 use std::thread;
@@ -23,7 +23,8 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
                 error!("Failed to initialize HID API for device read loop.");
                 return;
             };
-            Self::begin_read_loop(device_identifier_clone.device_info, hid_api);
+            Self::begin_read_loop(device_identifier_clone.device_info, hid_api)
+                .expect("Failed to begin read loop.");
         });
 
         Ok(RodeCasterProIIDevice { device_identifier })
@@ -48,92 +49,65 @@ impl ExecutableUsbDevice for RodeCasterProIIDevice {
 
 impl RodeCasterProIIDevice {
 
-    fn begin_read_loop(device_info: DeviceInfo, hid_api: HidApi) {
-        let device = match device_info.open_device(&hid_api) {
-            Ok(device) => device,
-            Err(e) => {
-                warn!("Failed to open device for reading: {}", e);
-                return;
-            }
-        };
+    // this is the main io loop that is run in a new thread
+    fn begin_read_loop(device_info: DeviceInfo, hid_api: HidApi) -> Result<()> {
+        let device = device_info.open_device(&hid_api)?;
+        device.set_blocking_mode(true)?;
 
         // todo: remove this, this is just for testing purpose until the send implementation is fixed
-        let Ok(_) = device.send_output_report(&*vec![HID_REPORT_ID_SEND, 0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0]) else {
-            warn!("Failed to write initial message to device");
-            return;
-        };
+        device.send_output_report(&*vec![HID_REPORT_ID_SEND, 0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0])?;
 
-        let mut failed_read_attempts: u8 = 0;
         loop {
-            // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
-            let mut report_buffer = vec![0u8; 256];
-            report_buffer[0] = HID_REPORT_ID_RECEIVE;
+            match Self::read_full_report(&device) {
+                Ok(message_buffer) => match parse_rodecaster_packet(&message_buffer) {
+                    Ok((remaining_buffer, packet)) => {
+                        info!("Received packet from device: {:?}", packet);
 
-            // read new incoming messages from the device
-            match Self::read_next_message(&device) {
-                Ok(message_buffer) => {
-                    failed_read_attempts = 0;
-
-                    match parse_rodecaster_packet(&message_buffer) {
-                        Ok((remaining_buffer, packet)) => {
-                            info!("Received packet from device: {:?}", packet);
-
-                            if !remaining_buffer.is_empty() {
-                                warn!("There were {} unparsed bytes remaining after parsing message from device.", remaining_buffer.len());
-                            }
+                        if !remaining_buffer.is_empty() {
+                            warn!("There were {} unparsed bytes remaining.", remaining_buffer.len());
                         }
-                        Err(nom::Err::Incomplete(needed)) =>
-                            error!("Incomplete message received from device: needed {:?}", needed),
-                        Err(e) =>
-                            error!("Failed to parse message received from device: {:?}", e),
                     }
+                    Err(nom::Err::Incomplete(needed)) =>
+                        error!("Incomplete message received from device: needed {:?}", needed),
+                    Err(e) =>
+                        error!("Failed to parse message received from device: {:?}", e),
                 }
                 Err(e) => {
                     warn!("Failed to read message from device: {}", e);
-                    if failed_read_attempts >= 5 {
-                        error!("Quitting read loop after 5 failed read attempts.");
-                        break;
-                    }
-
-                    failed_read_attempts = failed_read_attempts + 1;
                 }
             }
         }
     }
 
-    fn read_next_message(device: &HidDevice) -> Result<Vec<u8>> {
-        // messages have a max size of 256 bytes, the first byte is reserved for the report ID.
-        let mut report_buffer = vec![0u8; 256];
-        report_buffer[0] = HID_REPORT_ID_RECEIVE;
+    fn read_full_report(device: &HidDevice) -> Result<Vec<u8>> {
+        let mut hid_report_buffer = [0u8; 256];
+        hid_report_buffer[0] = HID_REPORT_ID_RECEIVE; // first byte is used as argument for hidapi
 
-        // read next message
-        let _ = &device.read(&mut report_buffer)?;
-        let mut reader = Cursor::new(&report_buffer[1..]);
+        let firs_report_read = &device.read(&mut hid_report_buffer)?;
+        if firs_report_read < &4usize {
+            return Err(anyhow!(
+                "First read report of packet is too short to even contain the message length."))
+        }
 
-        // first 4 bytes are the message length, the rest is the message data
-        let message_length = reader.read_u32::<byteorder::LittleEndian>()?;
-        let mut bytes_read_total: u32 = 0;
-        let mut message_buffer = vec![0u8; message_length as usize];
+        // begin reading the full message
+        let mut reader = Cursor::new(&hid_report_buffer[1..]);
+        let packet_length = reader.read_u32::<LittleEndian>()?;
+        let mut packet_buffer = vec![0u8; packet_length as usize];
+        let mut packet_bytes_read = 0;
 
-        while bytes_read_total < message_length {
-            let bytes_read_now =  reader.read(&mut message_buffer[bytes_read_total as usize..])?;
-            bytes_read_total += bytes_read_now as u32;
+        while packet_bytes_read < packet_length {
+            let packet_bytes_read_now = reader.read(&mut packet_buffer[packet_bytes_read as usize..])?;
+            packet_bytes_read += packet_bytes_read_now as u32;
 
-            if bytes_read_now == 0 {
-                warn!("No more data to read from device, but message length is not satisfied yet.");
+            if packet_bytes_read_now <= 1 {
+                warn!("No more data to read from device, but packet length is not satisfied yet.");
                 break;
             }
 
-            // read next message if the message length is not satisfied yet
-            if bytes_read_total < message_length {
-                // reuse report buffer, clear all values after the first byte
-                report_buffer[1..].fill(0);
-
-                // read next report
-                match &device.read(&mut report_buffer) {
-                    Ok(_) => {
-                        reader = Cursor::new(&report_buffer[1..]);
-                    }
+            if packet_bytes_read < packet_length {
+                hid_report_buffer[1..].fill(0); // clear except report id
+                match &device.read(&mut hid_report_buffer) {
+                    Ok(_) => reader = Cursor::new(&hid_report_buffer[1..]),
                     Err(e) => {
                         warn!("Failed to read continuation message from device: {}", e);
                         break;
@@ -142,6 +116,6 @@ impl RodeCasterProIIDevice {
             }
         }
 
-        Ok(message_buffer)
+        Ok(packet_buffer)
     }
 }

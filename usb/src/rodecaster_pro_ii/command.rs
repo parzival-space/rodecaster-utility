@@ -1,5 +1,4 @@
 use anyhow::Result;
-use log::info;
 use crate::common::device::ExecutableUsbDevice;
 use crate::rodecaster_pro_ii::RodeCasterProIIDevice;
 
