@@ -1,11 +1,9 @@
-use std::fs;
 use std::thread::sleep;
 use std::time::Duration;
 use log::{debug, error, info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
-use rodecaster_usb::{DeviceManager, DeviceIdentifier, DeviceType, HotPlugDeviceEvent, OpenDeviceResult};
+use rodecaster_usb::{DeviceManager, HotPlugDeviceEvent, OpenDeviceResult};
 use crossbeam::channel::{bounded, };
-use rodecaster_usb::DeviceType::RodeCasterProII;
 
 fn main() {
     CombinedLogger::init(
@@ -15,7 +13,7 @@ fn main() {
     ).unwrap();
 
     let (device_sender, device_receiver) = bounded(100);
-    let (control_sender, control_receiver) = bounded(100);
+    let (_control_sender, control_receiver) = bounded(100);
     let device_manager = DeviceManager::new(device_sender, control_receiver)
         .expect("Failed to create device manager");
 

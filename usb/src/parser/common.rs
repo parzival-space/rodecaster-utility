@@ -1,7 +1,7 @@
 use nom::bytes::streaming::{tag, take_till};
 use nom::error::Error;
 use nom::IResult;
-use nom::number::streaming::{be_f64, le_f64, le_i64, le_u32, le_u64, le_u8};
+use nom::number::streaming::{le_f64, le_u32, le_u8};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldValue {

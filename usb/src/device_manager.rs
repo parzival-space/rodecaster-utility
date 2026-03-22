@@ -120,7 +120,7 @@ impl DeviceManager {
             return;
         }
 
-        devices.push((device_identifier.clone()));
+        devices.push(device_identifier.clone());
         let _ = self.sender.send(HotPlugDeviceEvent::DeviceAttached(device_identifier));
     }
 

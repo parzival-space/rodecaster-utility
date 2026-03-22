@@ -2,7 +2,7 @@ use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
 use crate::{DeviceIdentifier};
 use anyhow::{anyhow, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
-use hidapi::{DeviceInfo, HidApi, HidDevice, HidResult};
+use hidapi::{DeviceInfo, HidApi, HidDevice};
 use log::{error, info, warn};
 use std::io::{Cursor, Read};
 use std::thread;
@@ -36,7 +36,7 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
 }
 
 impl ExecutableUsbDevice for RodeCasterProIIDevice {
-    fn write(&mut self, data: Vec<u8>) -> Result<()> {
+    fn write(&mut self, _data: Vec<u8>) -> Result<()> {
         // todo: implement this
         Ok(())
     }
