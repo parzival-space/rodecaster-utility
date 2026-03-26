@@ -1,7 +1,7 @@
 use nom::bytes::streaming::{tag, take_till};
 use nom::error::Error;
 use nom::IResult;
-use nom::number::streaming::{le_f64, le_u32, le_u8};
+use nom::number::streaming::{le_f64, le_u16, le_u32, le_u8};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldValue {
@@ -25,10 +25,14 @@ pub fn parse_null_terminated_string(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 pub fn parse_field_value(input: &[u8]) -> IResult<&[u8], FieldValue> {
-    let (input, _reserved) = tag([0x01].as_ref())(input)?; // reserved byte
-    let (input, data_length) = le_u8(input)?;
-    let (input, data_type) = le_u8(input)?;
+    let (input, data_length_type) = le_u8(input)?; // reserved byte
+    let (input, data_length) = match data_length_type {
+        0x01 => le_u8(input).map(|res| (res.0, res.1 as usize))?,
+        0x02 => le_u16(input).map(|res| (res.0, res.1 as usize))?,
+        _ => Err(nom::Err::Error(Error::new(input, nom::error::ErrorKind::Verify)))?
+    };
 
+    let (input, data_type) = le_u8(input)?;
     match data_type {
         // u32
         0x01 => {
@@ -67,8 +71,8 @@ pub fn parse_field_value(input: &[u8]) -> IResult<&[u8], FieldValue> {
 
         // string
         0x05 => {
-            let (input, string) = parse_null_terminated_string(input)?;
-            Ok((input, FieldValue::String(string)))
+            let (input, value) = parse_null_terminated_string(input)?;
+            Ok((input, FieldValue::String(value)))
         }
 
         // double

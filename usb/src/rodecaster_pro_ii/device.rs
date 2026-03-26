@@ -69,6 +69,10 @@ impl RodeCasterProIIDevice {
                     }
                     Err(nom::Err::Incomplete(needed)) =>
                         error!("Incomplete message received from device: needed {:?}", needed),
+                    Err(nom::Err::Error(needed)) => {
+                        error!("Failed to parse message received from device.\nNext 10 bytes: {:2x?}\nAs ASCII: {:?}",
+                            &needed.input[..10], String::from_utf8_lossy(&needed.input[..10]));
+                    }
                     Err(e) =>
                         error!("Failed to parse message received from device: {:?}", e),
                 }
