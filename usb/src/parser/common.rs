@@ -56,15 +56,6 @@ pub fn parse_field_value(input: &[u8]) -> IResult<&[u8], FieldValue> {
 
         // f64
         0x04 => {
-            let data_bytes = (data_length - 1) as usize;
-            if data_bytes != 8 {
-                // this is not a double, something is wrong
-                return Err(nom::Err::Error(Error::new(
-                    input,
-                    nom::error::ErrorKind::Verify,
-                )))
-            }
-
             let (input, value) = le_f64(input)?;
             Ok((input, FieldValue::F64(value)))
         }
@@ -77,14 +68,6 @@ pub fn parse_field_value(input: &[u8]) -> IResult<&[u8], FieldValue> {
 
         // double
         0x06 => {
-            let data_bytes = (data_length - 1) as usize;
-            if data_bytes != 8 {
-                return Err(nom::Err::Error(Error::new(
-                    input,
-                    nom::error::ErrorKind::Verify,
-                )))
-            }
-
             let (input, value) = le_f64(input)?;
             Ok((input, FieldValue::Double(value)))
         }
@@ -103,7 +86,9 @@ pub fn parse_field_value(input: &[u8]) -> IResult<&[u8], FieldValue> {
                 remaining_data_bytes -= last_input.len().abs_diff(input.len());
                 last_input = input;
             }
-            Ok((last_input, FieldValue::Struct(values)))
+
+            let (input, _) = tag([0x00].as_ref())(last_input)?; // struct seems to end with a 0x00 byte
+            Ok((input, FieldValue::Struct(values)))
         }
 
         _ => unreachable!(),

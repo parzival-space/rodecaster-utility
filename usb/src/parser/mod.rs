@@ -1,6 +1,6 @@
-mod single_field_update;
-mod common;
-mod status_report;
+pub mod common;
+pub mod single_field_update;
+pub mod status_report;
 
 use nom::{error_position, IResult};
 use nom::error::ErrorKind;
