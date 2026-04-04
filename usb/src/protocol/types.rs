@@ -83,11 +83,13 @@ pub fn parse_value(input: &[u8]) -> IResult<&[u8], Value> {
 
 pub(crate) fn write_value(stream: &mut Vec<u8>, value: &Value) -> Result<()> {
     match value {
+        // 0x01
         Value::U32(value) => {
             stream.write_u8(0x01)?; // data length type: u8
             stream.write_u8(0x05)?; // data length: 1 byte for type + 4 bytes for u32
             stream.write_u32::<LittleEndian>(*value)?;
         }
+        // 0x02, 0x03
         Value::Bool(value) => {
             stream.write_u8(0x01)?; // data length type: u8
             stream.write_u8(0x01)?; // data length: 1 byte for type
@@ -97,11 +99,13 @@ pub(crate) fn write_value(stream: &mut Vec<u8>, value: &Value) -> Result<()> {
                 stream.write_u8(0x03)?; // false
             }
         }
+        // 0x04
         Value::F64(value) => {
             stream.write_u8(0x01)?; // data length type: u8
             stream.write_u8(0x09)?; // data length: 1 byte for type + 8 bytes for f64
             stream.write_f64::<LittleEndian>(*value)?;
         }
+        // 0x05
         Value::String(value) => {
             if value.len() + 2 <= u8::MAX as usize { // +1 type, +1 null terminator
                 stream.write_u8(0x01)?; // data length type: u8
@@ -115,11 +119,13 @@ pub(crate) fn write_value(stream: &mut Vec<u8>, value: &Value) -> Result<()> {
                 bail!("String value is too long to be written in the current protocol implementation.");
             }
         }
+        // 0x06
         Value::Double(value) => {
             stream.write_u8(0x01)?; // data length type: u8
             stream.write_u8(0x09)?; // data length: 1 byte for type + 8 bytes for f64
             stream.write_f64::<byteorder::LittleEndian>(*value)?;
         }
+        // 0x08
         Value::Combined(value) => {
             for value in value {
                 write_value(stream, value)?;
