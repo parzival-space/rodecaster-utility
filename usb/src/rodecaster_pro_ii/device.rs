@@ -2,11 +2,12 @@ use crate::common::device::{AttachableUsbDevice};
 use crate::{DeviceIdentifier};
 use anyhow::{anyhow, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
-use hidapi::{DeviceInfo, HidApi, HidDevice};
+use hidapi::{DeviceInfo, HidApi, HidDevice, HidError};
 use log::{error, info, warn};
 use std::io::{Cursor, Read};
 use std::thread;
-use crate::protocol::framing::read_framed_message;
+use crate::protocol::framing::{read_framed_message, RodeCasterPacketResult};
+use crate::protocol::types::Structured;
 
 const HID_REPORT_ID_SEND: u8 = 0x03;
 const HID_REPORT_ID_RECEIVE: u8 = 0x04;
@@ -45,6 +46,13 @@ impl RodeCasterProIIDevice {
         // todo: remove this, this is just for testing purpose until the send implementation is fixed
         device.send_output_report(&*vec![HID_REPORT_ID_SEND, 0x04, 0x00, 0x00, 0x00, 0xAD, 0x10, 0xA7, 0xB0])?;
 
+        // todo: this is just an example implementation. move this internal device state into the struct
+        let mut state = Structured {
+            name: "".to_string(),
+            properties: Default::default(),
+            children: vec![],
+        };
+
         loop {
             match read_framed_message(|| {
                 // read next HID report
@@ -55,10 +63,25 @@ impl RodeCasterProIIDevice {
                 Ok(hid_report_buffer[1..].to_vec()) // skip first byte, as it's the report id
             }) {
                 Ok(packet) => {
-                    info!("Received packet {:?}", packet);
+                    match packet {
+                        RodeCasterPacketResult::Unknown(data) => {
+                            warn!("Got unknown rodecast packet {:?}", data);
+                        }
+                        RodeCasterPacketResult::PropertyUpdate(update) => {
+                            info!("Property update: {:?}", update);
+                            state.set_property(update.indices, update.name, update.value)
+                                .expect("Failed to set property.");
+                        }
+                        RodeCasterPacketResult::DeviceReport(report) => {
+                            info!("Device report: {:?}", report);
+                            state = report.report;
+                        }
+                    }
+
                 }
                 Err(error) => {
-                    error!("Failed to read framed message: {:?}", error);
+                    error!("Error from device read: {:?}", error);
+                    return Err(anyhow!("Error from device read: {:?}", error));
                 }
             }
         }

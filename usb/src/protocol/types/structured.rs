@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::mem::discriminant;
+use anyhow::anyhow;
 use nom::error::{Error, ErrorKind};
 use nom::IResult;
 use nom::number::streaming::{le_u16, le_u8};
@@ -8,7 +10,7 @@ use crate::protocol::types::{StreamableType, Value, parse_c_string};
 pub struct Structured {
     pub name: String,
     pub properties: HashMap<String, Value>,
-    pub children: HashMap<String, Vec<Structured>>,
+    pub children: Vec<Structured>,
 }
 
 impl StreamableType for Structured {
@@ -46,7 +48,7 @@ impl StreamableType for Structured {
                         input, Structured {
                             name,
                             properties,
-                            children: HashMap::new()
+                            children: vec![]
                         }
                     )),
                     0x01 => { // has children
@@ -68,23 +70,20 @@ impl StreamableType for Structured {
         }
     }
 
-    fn write_to_stream(&self, stream: &mut Vec<u8>) -> anyhow::Result<()> {
+    fn write_to_stream(&self, _: &mut Vec<u8>) -> anyhow::Result<()> {
         todo!("There is currently no use case for the write function of the Structured type.")
     }
 }
 
 impl Structured {
     /// Helper function to parse the children section of the structured component
-    fn parse_children(input: &[u8], child_count: usize) -> IResult<&[u8], HashMap<String, Vec<Structured>>> {
-        let mut children = HashMap::new();
+    fn parse_children(input: &[u8], child_count: usize) -> IResult<&[u8], Vec<Structured>> {
+        let mut children = Vec::new();
         let mut last_input = input;
         for _ in 0..child_count {
             let (input, child) = Structured::parse_from_stream(&last_input)?;
+            children.push(child);
             last_input = input;
-
-            let child_name = child.name.clone();
-            if !children.contains_key(&child_name) { children.insert(child_name.clone(), Vec::new()); }
-            children.get_mut(&child_name).unwrap().push(child);
         };
 
         Ok((last_input, children))
@@ -105,5 +104,25 @@ impl Structured {
         };
 
         Ok((last_input, properties))
+    }
+
+    /// update a value at a given index
+    pub fn set_property(&mut self, indices: Vec<usize>, property_name: String, value: Value) -> anyhow::Result<()> {
+        if indices.is_empty() {
+            if let Some(existing_property) = self.properties.get(&property_name){
+                // ensure the new value has the same type as the old value
+                if discriminant(existing_property) != discriminant(&value) {
+                    return Err(anyhow!("Cannot update property {}: type mismatch (existing: {:?}, new: {:?})", property_name, existing_property, value));
+                }
+                self.properties.insert(property_name, value);
+                Ok(())
+            } else {
+                Err(anyhow!("Cannot update property {}: property does not exist", property_name))?
+            }
+        } else {
+            self.children.get_mut(indices[0])
+                .ok_or_else(|| anyhow!("No such index {}", indices[0]))?
+                .set_property(indices[1..].to_vec(), property_name, value)
+        }
     }
 }

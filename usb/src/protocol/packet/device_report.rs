@@ -6,7 +6,7 @@ use crate::protocol::types::{StreamableType, Structured};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceReportPacket {
-    report: Structured,
+    pub report: Structured,
 }
 
 impl RodeCasterPacket for DeviceReportPacket {
