@@ -1,10 +1,9 @@
 pub mod device;
-pub mod command;
 
-use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
+use crate::common::device::{AttachableUsbDevice};
 
 pub use device::RodeCasterProIIDevice;
 
 impl RodeCasterProII for RodeCasterProIIDevice {}
-pub trait RodeCasterProII: AttachableUsbDevice + ExecutableUsbDevice {}
+pub trait RodeCasterProII: AttachableUsbDevice {}
 

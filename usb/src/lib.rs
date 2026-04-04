@@ -2,6 +2,7 @@ mod device_manager;
 mod common;
 pub mod rodecaster_pro_ii;
 pub mod parser;
+mod protocol;
 
 /// USB Vendor ID for RODE Devices.
 /// Device specific IDs are defined in the respective device module.

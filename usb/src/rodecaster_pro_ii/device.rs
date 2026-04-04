@@ -1,4 +1,4 @@
-use crate::common::device::{AttachableUsbDevice, ExecutableUsbDevice};
+use crate::common::device::{AttachableUsbDevice};
 use crate::{DeviceIdentifier};
 use anyhow::{anyhow, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -32,18 +32,6 @@ impl AttachableUsbDevice for RodeCasterProIIDevice {
 
     fn get_device_info(&self) -> DeviceInfo {
         self.device_identifier.device_info.clone()
-    }
-}
-
-impl ExecutableUsbDevice for RodeCasterProIIDevice {
-    fn write(&mut self, _data: Vec<u8>) -> Result<()> {
-        // todo: implement this
-        Ok(())
-    }
-
-    fn read(&mut self) -> Result<Vec<u8>> {
-        // todo: implement this
-        Ok(Vec::new())
     }
 }
 
