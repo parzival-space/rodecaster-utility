@@ -3,9 +3,8 @@ use byteorder::WriteBytesExt;
 use nom::bytes::streaming::{tag};
 use nom::IResult;
 use nom::number::streaming::{le_u8, le_u16};
-use crate::protocol::helper::{parse_c_string, write_c_string};
 use crate::protocol::packet::RodeCasterPacket;
-use crate::protocol::types::{StreamableType, Value};
+use crate::protocol::types::{StreamableType, Value, parse_c_string, write_c_string};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct PropertyUpdatePacket {
