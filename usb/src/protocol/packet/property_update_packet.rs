@@ -5,8 +5,9 @@ use nom::IResult;
 use nom::number::streaming::{le_u8, le_u16};
 use crate::protocol::helper::{parse_c_string, write_c_string};
 use crate::protocol::packet::RodeCasterPacket;
-use crate::protocol::types::{parse_value, write_value, Value};
+use crate::protocol::types::{StreamableType, Value};
 
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct PropertyUpdatePacket {
     pub indices: Vec<usize>,
     pub name: String,
@@ -27,7 +28,7 @@ impl RodeCasterPacket for PropertyUpdatePacket {
         let (input, indices) = Self::parse_indices(input, indices_count as usize)?;
 
         let (input, name) = parse_c_string(input)?;
-        let (input, value) = parse_value(input)?;
+        let (input, value) = Value::parse_from_stream(input)?;
 
         Ok((input, Self { indices, name, value }))
     }
@@ -45,7 +46,7 @@ impl RodeCasterPacket for PropertyUpdatePacket {
         Self::write_indices(&mut bytes, &self.indices)?;
         
         write_c_string(&mut bytes, &self.name)?;
-        write_value(&mut bytes, &self.value)?;
+        self.value.write_to_stream(&mut bytes)?;
 
         Ok(bytes)
     }

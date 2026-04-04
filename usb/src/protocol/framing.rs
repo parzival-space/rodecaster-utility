@@ -1,14 +1,15 @@
-use std::cmp::{min};
-use anyhow::{Result};
-use nom::bytes::streaming::{take};
-use nom::number::streaming::{le_f64, le_u16, le_u32, le_u8};
-use crate::protocol::packet::PropertyUpdatePacket;
+use crate::protocol::packet::{DeviceReportPacket, PropertyUpdatePacket};
 use crate::protocol::packet::RodeCasterPacket;
+use anyhow::Result;
+use nom::bytes::streaming::take;
+use nom::number::streaming::le_u32;
+use std::cmp::min;
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum RodeCasterPacketResult {
     Unknown(Vec<u8>),
     PropertyUpdate(PropertyUpdatePacket),
-    DeviceReport
+    DeviceReport(DeviceReportPacket)
 }
 
 // This file contain readers and writers for the framed message format that the RODECaster devices
@@ -53,14 +54,34 @@ where
         Some(0x01) => {
             let result = PropertyUpdatePacket::from_bytes(&packet)
                 .map(|result| result.1)
-                .or_else(|_| Err(anyhow::anyhow!("Failed to parse PropertyUpdatePacket from packet data.")))?;
+                .or_else(|e| parse_nom_error(e))?;
             Ok(RodeCasterPacketResult::PropertyUpdate(result))
         },
-        Some(0x02) => todo!("DeviceReport not implemented yet"),
+        Some(0x02) => {
+            let result = DeviceReportPacket::from_bytes(&packet)
+                .map(|result| result.1)
+                .or_else(|e| parse_nom_error(e))?;
+            Ok(RodeCasterPacketResult::DeviceReport(result))
+        },
         _ => Ok(RodeCasterPacketResult::Unknown(packet.clone()))
     }
 
 
+}
+
+fn parse_nom_error<T>(e: nom::Err<nom::error::Error<&[u8]>>) -> Result<T, > {
+    match e {
+        nom::Err::Incomplete(needed) => Err(anyhow::anyhow!("Failed to parse from packet data. Needed: {:?} bytes", needed)),
+        nom::Err::Error(error) => {
+            let next_20_bytes = error.input[..20].to_vec();
+            let next_20_chars = String::from_utf8_lossy(&next_20_bytes);
+            Err(anyhow::anyhow!(
+                            "Failed to parse from packet data. Error: {:?}. Next 20 chars: {:?} Next 20 bytes: {:?}. Code: {:?}",
+                            error, next_20_chars, next_20_bytes, error.code
+                        ))
+        }
+        e => Err(anyhow::anyhow!("Failed to parse from packet data: {}", e)),
+    }
 }
 
 /// Writer for framed RODECaster protocol messages, as they are usually send using HID reports.
@@ -95,8 +116,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::protocol::types::Value;
     use super::*;
+    use crate::protocol::types::Value;
 
     #[test]
     fn test_parse_framed_message() {
