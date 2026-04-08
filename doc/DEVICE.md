@@ -1,6 +1,7 @@
 # RODECaster Pro II
 
 ## USB Device
+
 | Property           | Value                                    | Note                                              |
 |--------------------|------------------------------------------|---------------------------------------------------|
 | Vendor ID          | `0x19f7`                                 |                                                   |
@@ -8,6 +9,7 @@
 | Product ID (USB 2) | `0x0026`                                 |                                                   |
 
 ### Device Interfaces & Endpoints
+
 These are the device endpoints, when using full Multitrack mode (Device PID `0072`).
 
 | Interface | Alt | Endpoints | Type / Class | Sub (?) | Prot (?) | Note                                             |
@@ -24,18 +26,21 @@ These are the device endpoints, when using full Multitrack mode (Device PID `007
 | 9         | 0   | 2         | 03 (HID)     | 06      | 50       | Used to send configuration packets               |
 
 #### Interface 7 Endpoints
+
 | Address | Direction | Type | Note |
 |---------|-----------|------|------|
 | `0x03`  | OUT       | Bulk |      |
 | `0x83`  | IN        | Bulk |      |
 
 #### Interface 8 Endpoints
+
 | Address | Direction | Type | Note |
 |---------|-----------|------|------|
 | `0x04`  | OUT       | Bulk |      |
 | `0x84`  | IN        | Bulk |      |
 
 #### Interface 9 Endpoints
+
 Used by the RODE Central App to control the device
 
 | Address | Direction | Type      | Note |

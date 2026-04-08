@@ -1,16 +1,18 @@
+use crossbeam::channel::bounded;
+use log::{LevelFilter, debug, error, info};
+use rodecaster_usb::{DeviceManager, HotPlugDeviceEvent, OpenDeviceResult};
+use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use std::thread::sleep;
 use std::time::Duration;
-use log::{debug, error, info, LevelFilter};
-use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
-use rodecaster_usb::{DeviceManager, HotPlugDeviceEvent, OpenDeviceResult};
-use crossbeam::channel::{bounded, };
 
 fn main() {
-    CombinedLogger::init(
-        vec![
-            TermLogger::new(LevelFilter::Debug, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-        ]
-    ).unwrap();
+    CombinedLogger::init(vec![TermLogger::new(
+        LevelFilter::Debug,
+        Config::default(),
+        TerminalMode::Mixed,
+        ColorChoice::Auto,
+    )])
+    .unwrap();
 
     let (device_sender, device_receiver) = bounded(100);
     let (_control_sender, control_receiver) = bounded(100);
@@ -24,13 +26,19 @@ fn main() {
         };
 
         info!("New device received: {:?}", hotplug_event);
-        info!("Current connected devices: {:?}", device_manager.get_devices().len());
+        info!(
+            "Current connected devices: {:?}",
+            device_manager.get_devices().len()
+        );
 
         match hotplug_event {
             HotPlugDeviceEvent::DeviceAttached(device) => {
                 match DeviceManager::open_device(device) {
                     OpenDeviceResult::RodeCasterProII(device) => {
-                        debug!("Successfully opened RodeCaster Pro II device: {:?}", device.get_device_info());
+                        debug!(
+                            "Successfully opened RodeCaster Pro II device: {:?}",
+                            device.get_device_info()
+                        );
 
                         loop {
                             // test if state actually gets updated
@@ -39,20 +47,23 @@ fn main() {
                                 debug!("Failed to aquire state. Exiting main loop.");
                                 break;
                             };
-                            info!("Current device state: {:?}", state.children.first().map(|child| child.children.first().map(|childchild| &childchild.properties)));
-
+                            info!(
+                                "Current device state: {:?}",
+                                state.children.first().map(|child| child
+                                    .children
+                                    .first()
+                                    .map(|childchild| &childchild.properties))
+                            );
                         }
-
                     }
-                    OpenDeviceResult::Err(error) => error!("Failed to open RodeCaster Pro II device: {:?}", error),
+                    OpenDeviceResult::Err(error) => {
+                        error!("Failed to open RodeCaster Pro II device: {:?}", error)
+                    }
                 }
             }
-            HotPlugDeviceEvent::DeviceRemoved(_) => {
-
-            },
+            HotPlugDeviceEvent::DeviceRemoved(_) => {}
         }
     }
-
 
     sleep(Duration::from_secs(1000));
 }

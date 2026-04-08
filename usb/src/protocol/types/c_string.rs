@@ -1,7 +1,7 @@
-use std::io::Write;
 use byteorder::WriteBytesExt;
-use nom::bytes::streaming::{tag, take_till};
 use nom::IResult;
+use nom::bytes::streaming::{tag, take_till};
+use std::io::Write;
 
 /// Helper function that reads a C-style null terminated string.
 /// The terminator byte is not included in the resulting string, but is consumed from the input.

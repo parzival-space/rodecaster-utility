@@ -1,5 +1,5 @@
-use crate::protocol::packet::{DeviceReportPacket, PropertyUpdatePacket};
 use crate::protocol::packet::RodeCasterPacket;
+use crate::protocol::packet::{DeviceReportPacket, PropertyUpdatePacket};
 use anyhow::Result;
 use nom::bytes::streaming::take;
 use nom::number::streaming::le_u32;
@@ -9,7 +9,7 @@ use std::cmp::min;
 pub enum RodeCasterPacketResult {
     Unknown(Vec<u8>),
     PropertyUpdate(PropertyUpdatePacket),
-    DeviceReport(DeviceReportPacket)
+    DeviceReport(DeviceReportPacket),
 }
 
 // This file contain readers and writers for the framed message format that the RODECaster devices
@@ -39,7 +39,8 @@ where
     current_frame = first_read_remaining.to_vec();
     while packet_bytes_remaining > 0 {
         let bytes_read_target = min(packet_bytes_remaining, current_frame.len());
-        let (_, bytes_read) = take::<usize, &[u8], ()>(bytes_read_target)(current_frame.as_slice())?;
+        let (_, bytes_read) =
+            take::<usize, &[u8], ()>(bytes_read_target)(current_frame.as_slice())?;
         // we can ignore the remaining bytes as the report size is usually bigger than the last frame
 
         packet_bytes_remaining -= &bytes_read.len();
@@ -56,36 +57,44 @@ where
                 .map(|result| result.1)
                 .or_else(|e| parse_nom_error(e))?;
             Ok(RodeCasterPacketResult::PropertyUpdate(result))
-        },
+        }
         Some(0x02) => {
             let result = DeviceReportPacket::from_bytes(&packet)
                 .map(|result| result.1)
                 .or_else(|e| parse_nom_error(e))?;
             Ok(RodeCasterPacketResult::DeviceReport(result))
-        },
-        _ => Ok(RodeCasterPacketResult::Unknown(packet.clone()))
+        }
+        _ => Ok(RodeCasterPacketResult::Unknown(packet.clone())),
     }
-
-
 }
 
-fn parse_nom_error<T>(e: nom::Err<nom::error::Error<&[u8]>>) -> Result<T, > {
+fn parse_nom_error<T>(e: nom::Err<nom::error::Error<&[u8]>>) -> Result<T> {
     match e {
-        nom::Err::Incomplete(needed) => Err(anyhow::anyhow!("Failed to parse from packet data. Needed: {:?} bytes", needed)),
+        nom::Err::Incomplete(needed) => Err(anyhow::anyhow!(
+            "Failed to parse from packet data. Needed: {:?} bytes",
+            needed
+        )),
         nom::Err::Error(error) => {
             let next_20_bytes = error.input[..20].to_vec();
             let next_20_chars = String::from_utf8_lossy(&next_20_bytes);
             Err(anyhow::anyhow!(
-                            "Failed to parse from packet data. Error: {:?}. Next 20 chars: {:?} Next 20 bytes: {:?}. Code: {:?}",
-                            error, next_20_chars, next_20_bytes, error.code
-                        ))
+                "Failed to parse from packet data. Error: {:?}. Next 20 chars: {:?} Next 20 bytes: {:?}. Code: {:?}",
+                error,
+                next_20_chars,
+                next_20_bytes,
+                error.code
+            ))
         }
         e => Err(anyhow::anyhow!("Failed to parse from packet data: {}", e)),
     }
 }
 
 /// Writer for framed RODECaster protocol messages, as they are usually send using HID reports.
-pub fn write_framed_message<F>(packet: Box<dyn RodeCasterPacket>, frame_size: usize, mut write_next_frame: F) -> Result<()>
+pub fn write_framed_message<F>(
+    packet: Box<dyn RodeCasterPacket>,
+    frame_size: usize,
+    mut write_next_frame: F,
+) -> Result<()>
 where
     F: FnMut(Vec<u8>) -> Result<()>,
 {
@@ -113,7 +122,6 @@ where
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,7 +138,8 @@ mod tests {
             let current_message = messages[0];
             messages.remove(0);
             Ok(current_message.to_vec())
-        }).unwrap();
+        })
+        .unwrap();
 
         // verify the correct packet type was determined
         assert!(matches!(packet, RodeCasterPacketResult::Unknown(_)));
@@ -154,13 +163,17 @@ mod tests {
         write_framed_message(Box::new(packet), 10, |data| {
             captured.push(data.to_vec());
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         assert_eq!(3, captured.len());
-        assert_eq!(vec![
-            vec![0x12, 0x00, 0x00, 0x00, 0x01, 0x01, 0x02, 0x01, 0x01, 0x01],
-            vec![0x02, 0x74, 0x65, 0x73, 0x74, 0x00, 0x01, 0x05, 0x2A, 0x00],
-            vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-        ], captured);
+        assert_eq!(
+            vec![
+                vec![0x12, 0x00, 0x00, 0x00, 0x01, 0x01, 0x02, 0x01, 0x01, 0x01],
+                vec![0x02, 0x74, 0x65, 0x73, 0x74, 0x00, 0x01, 0x05, 0x2A, 0x00],
+                vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            ],
+            captured
+        );
     }
 }

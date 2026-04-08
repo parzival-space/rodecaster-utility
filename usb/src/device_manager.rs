@@ -1,4 +1,7 @@
-use anyhow::{bail, Error, Result};
+use crate::RodeCasterProII;
+use crate::common::device::AttachableUsbDevice;
+use crate::rodecaster_pro_ii::RodeCasterProIIDevice;
+use anyhow::{Error, Result, bail};
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
 use log::{error, warn};
@@ -7,43 +10,48 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::common::device::AttachableUsbDevice;
-use crate::rodecaster_pro_ii::RodeCasterProIIDevice;
-use crate::RodeCasterProII;
 
 pub(crate) const VID_RODE: u16 = 0x19f7;
 pub(crate) const PID_RODECASTER_PRO_II: &[u16] = &[0x0037, 0x0072, 0x0078, 0x0030, 0x0094, 0x0092];
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum DeviceType {
-    RodeCasterProII
+    RodeCasterProII,
 }
 
 #[derive(Debug, Clone)]
 pub struct DeviceIdentifier {
     pub device_type: DeviceType,
-    pub(crate) device_info: DeviceInfo
+    pub(crate) device_info: DeviceInfo,
 }
 
 impl PartialEq for DeviceIdentifier {
     fn eq(&self, other: &Self) -> bool {
-        self.device_info.vendor_id().eq(&other.device_info.vendor_id()) &&
-        self.device_info.product_id().eq(&other.device_info.product_id()) &&
-        self.device_info.serial_number().unwrap_or_default()
-            .eq(other.device_info.serial_number().unwrap_or_default()) &&
-        self.device_type == other.device_type
+        self.device_info
+            .vendor_id()
+            .eq(&other.device_info.vendor_id())
+            && self
+                .device_info
+                .product_id()
+                .eq(&other.device_info.product_id())
+            && self
+                .device_info
+                .serial_number()
+                .unwrap_or_default()
+                .eq(other.device_info.serial_number().unwrap_or_default())
+            && self.device_type == other.device_type
     }
 }
 
 #[derive(PartialEq)]
 pub enum HotPlugThreadManagement {
-    Quit
+    Quit,
 }
 
 #[derive(PartialEq, Debug)]
 pub enum HotPlugDeviceEvent {
     DeviceAttached(DeviceIdentifier),
-    DeviceRemoved(DeviceIdentifier)
+    DeviceRemoved(DeviceIdentifier),
 }
 
 pub enum OpenDeviceResult {
@@ -56,11 +64,14 @@ pub struct DeviceManager {
     hid_api: HidApi,
     devices: Arc<Mutex<Vec<DeviceIdentifier>>>,
     sender: Sender<HotPlugDeviceEvent>,
-    receiver: Receiver<HotPlugThreadManagement>
+    receiver: Receiver<HotPlugThreadManagement>,
 }
 
 impl DeviceManager {
-    pub fn new(sender: Sender<HotPlugDeviceEvent>, receiver: Receiver<HotPlugThreadManagement>) -> Result<DeviceManager> {
+    pub fn new(
+        sender: Sender<HotPlugDeviceEvent>,
+        receiver: Receiver<HotPlugThreadManagement>,
+    ) -> Result<DeviceManager> {
         let devices = Arc::new(Mutex::new(Vec::new()));
         let devices_close = Arc::clone(&devices);
         let sender_clone = sender.clone();
@@ -73,7 +84,9 @@ impl DeviceManager {
         // spawn new thread and run scan_devices
         thread::spawn(move || {
             let Ok(hid_api_worker) = HidApi::new() else {
-                warn!("Failed to initialize HID API in worker thread. Hotplug events will not be detected.");
+                warn!(
+                    "Failed to initialize HID API in worker thread. Hotplug events will not be detected."
+                );
                 return;
             };
 
@@ -81,22 +94,25 @@ impl DeviceManager {
                 hid_api: hid_api_worker,
                 devices: devices_close,
                 sender: sender_clone,
-                receiver: receiver_clone
+                receiver: receiver_clone,
             };
             manager.run_hotplug_scan_loop();
         });
 
-        Ok(Self { hid_api, devices, sender, receiver })
+        Ok(Self {
+            hid_api,
+            devices,
+            sender,
+            receiver,
+        })
     }
-    
+
     pub fn open_device(device_identifier: DeviceIdentifier) -> OpenDeviceResult {
         match device_identifier.device_type {
-            DeviceType::RodeCasterProII => {
-                match RodeCasterProIIDevice::open(device_identifier) {
-                    Ok(device) => OpenDeviceResult::RodeCasterProII(Box::new(device)),
-                    Err(error) => OpenDeviceResult::Err(error)
-                }
-            }
+            DeviceType::RodeCasterProII => match RodeCasterProIIDevice::open(device_identifier) {
+                Ok(device) => OpenDeviceResult::RodeCasterProII(Box::new(device)),
+                Err(error) => OpenDeviceResult::Err(error),
+            },
         }
     }
 
@@ -104,7 +120,7 @@ impl DeviceManager {
     pub fn get_devices(&self) -> Vec<DeviceIdentifier> {
         let Ok(devices) = self.devices.lock() else {
             error!("Failed to acquire lock on devices. Returning empty device list.");
-            return vec![]
+            return vec![];
         };
         devices.clone()
     }
@@ -112,26 +128,33 @@ impl DeviceManager {
     fn add_device(&mut self, device_identifier: DeviceIdentifier) {
         let Ok(mut devices) = self.devices.lock() else {
             error!("Failed to acquire lock on devices. Cannot add new device.");
-            return
+            return;
         };
 
-        if devices.iter().any(|known_device_identifier| known_device_identifier.eq(&device_identifier)) {
+        if devices
+            .iter()
+            .any(|known_device_identifier| known_device_identifier.eq(&device_identifier))
+        {
             warn!("Device already exists in the list of known devices. Skipping add.");
             return;
         }
 
         devices.push(device_identifier.clone());
-        let _ = self.sender.send(HotPlugDeviceEvent::DeviceAttached(device_identifier));
+        let _ = self
+            .sender
+            .send(HotPlugDeviceEvent::DeviceAttached(device_identifier));
     }
 
     fn remove_device(&mut self, device_identifier: DeviceIdentifier) {
         let Ok(mut devices) = self.devices.lock() else {
             error!("Failed to acquire lock on devices. Cannot remove device.");
-            return
+            return;
         };
 
         devices.retain(|known_device_identifier| known_device_identifier.ne(&device_identifier));
-        let _ = self.sender.send(HotPlugDeviceEvent::DeviceRemoved(device_identifier));
+        let _ = self
+            .sender
+            .send(HotPlugDeviceEvent::DeviceRemoved(device_identifier));
     }
 
     // scan function to detect hotplug events since HidApi doesn't support hotplugging natively yet
@@ -140,46 +163,51 @@ impl DeviceManager {
             match self.receiver.try_recv() {
                 Ok(message) => {
                     if message == HotPlugThreadManagement::Quit {
-                        break
+                        break;
                     }
-                },
+                }
                 Err(error) => match error {
                     TryRecvError::Empty => (),
                     TryRecvError::Disconnected => {
                         error!("Receiver has been disconnected. Stopping hotplug thread.");
-                        break
+                        break;
                     }
-                }
+                },
             };
 
             let mut detected_devices = vec![];
             if let Ok(_) = self.hid_api.refresh_devices() {
                 for device in self.hid_api.device_list() {
                     if VID_RODE.eq(&device.vendor_id()) {
-
                         // RodeCaster Pro II
                         if PID_RODECASTER_PRO_II.contains(&device.product_id()) {
                             detected_devices.push(DeviceIdentifier {
                                 device_info: device.clone(),
-                                device_type: DeviceType::RodeCasterProII
+                                device_type: DeviceType::RodeCasterProII,
                             });
                         }
                     }
                 }
             }
 
-            let (devices_to_add, devices_to_remove): (Vec<DeviceIdentifier>, Vec<DeviceIdentifier>) = {
-                let Ok(known_devices) = self.devices.lock() else { // self is immutable for some reason
+            let (devices_to_add, devices_to_remove): (
+                Vec<DeviceIdentifier>,
+                Vec<DeviceIdentifier>,
+            ) = {
+                let Ok(known_devices) = self.devices.lock() else {
+                    // self is immutable for some reason
                     error!("Failed to acquire lock on devices. Skipping hotplug scan.");
-                    continue
+                    continue;
                 };
 
                 (
-                    detected_devices.iter()
+                    detected_devices
+                        .iter()
                         .filter(|device| !known_devices.contains(device))
                         .cloned()
                         .collect(),
-                    known_devices.iter()
+                    known_devices
+                        .iter()
                         .filter(|device| !detected_devices.contains(device))
                         .cloned()
                         .collect(),

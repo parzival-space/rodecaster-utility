@@ -1,11 +1,11 @@
+use crate::protocol::types::{StreamableType, parse_c_string, write_c_string};
 use anyhow::bail;
 use byteorder::{LittleEndian, WriteBytesExt};
 use log::warn;
-use nom::bytes::streaming::{take};
-use nom::error::{Error, ErrorKind};
 use nom::IResult;
-use nom::number::streaming::{le_f64, le_u16, le_u32, le_u8};
-use crate::protocol::types::{StreamableType, parse_c_string, write_c_string};
+use nom::bytes::streaming::take;
+use nom::error::{Error, ErrorKind};
+use nom::number::streaming::{le_f64, le_u8, le_u16, le_u32};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -24,7 +24,7 @@ impl StreamableType for Value {
         let (input, data_length) = match data_length_type {
             0x01 => le_u8(input).map(|res| (res.0, res.1 as usize))?,
             0x02 => le_u16(input).map(|res| (res.0, res.1 as usize))?,
-            _ => Err(nom::Err::Error(Error::new(input, ErrorKind::Verify)))?
+            _ => Err(nom::Err::Error(Error::new(input, ErrorKind::Verify)))?,
         };
 
         let (input, data_type) = le_u8(input)?;
@@ -34,27 +34,27 @@ impl StreamableType for Value {
                 assert_eq!(data_length - 1, 4);
                 let (input, value) = le_u32(input)?;
                 Ok((input, Value::U32(value)))
-            },
+            }
             // boolean
-            0x02 => {Ok((input, Value::Bool(true)))},
-            0x03 => {Ok((input, Value::Bool(false)))},
+            0x02 => Ok((input, Value::Bool(true))),
+            0x03 => Ok((input, Value::Bool(false))),
             // f64
             0x04 => {
                 assert_eq!(data_length - 1, 8);
                 let (input, value) = le_f64(input)?;
                 Ok((input, Value::F64(value)))
-            },
+            }
             // string
             0x05 => {
                 let (input, value) = parse_c_string(input)?;
                 Ok((input, Value::String(value)))
-            },
+            }
             // double, f64 again but tagged differently
             0x06 => {
                 assert_eq!(data_length - 1, 8);
                 let (input, value) = le_f64(input)?;
                 Ok((input, Value::Double(value)))
-            },
+            }
             // Combined
             0x08 => {
                 let mut remaining_data_bytes = data_length - 1;
@@ -70,10 +70,12 @@ impl StreamableType for Value {
                 }
 
                 Ok((last_input, Value::Combined(values)))
-            },
+            }
 
             _ => {
-                warn!("Received unknown data type: {data_type}, with length: {data_length}. This is most likely due to a protocol change.");
+                warn!(
+                    "Received unknown data type: {data_type}, with length: {data_length}. This is most likely due to a protocol change."
+                );
                 let (input, value) = take(data_length)(input)?;
                 Ok((input, Value::Unknown(value.to_vec())))
             }
@@ -106,7 +108,8 @@ impl StreamableType for Value {
             }
             // 0x05
             Value::String(value) => {
-                if value.len() + 2 <= u8::MAX as usize { // +1 type, +1 null terminator
+                if value.len() + 2 <= u8::MAX as usize {
+                    // +1 type, +1 null terminator
                     stream.write_u8(0x01)?; // data length type: u8
                     stream.write_u8((value.len() + 2) as u8)?; // data length: 1 byte for type + string_length
                     write_c_string(stream, value)?;
@@ -115,7 +118,9 @@ impl StreamableType for Value {
                     stream.write_u16::<LittleEndian>((value.len() + 2) as u16)?; // data length: 1 byte for type + string_length
                     write_c_string(stream, value)?;
                 } else {
-                    bail!("String value is too long to be written in the current protocol implementation.");
+                    bail!(
+                        "String value is too long to be written in the current protocol implementation."
+                    );
                 }
             }
             // 0x06
@@ -131,7 +136,10 @@ impl StreamableType for Value {
                 }
             }
             Value::Unknown(value) => {
-                bail!("Cannot write unknown value type with length {}. Don't try to execute unsupported operations!", value.len());
+                bail!(
+                    "Cannot write unknown value type with length {}. Don't try to execute unsupported operations!",
+                    value.len()
+                );
             }
         };
         Ok(())

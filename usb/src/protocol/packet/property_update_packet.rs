@@ -1,10 +1,10 @@
-use anyhow::{bail, Result};
-use byteorder::WriteBytesExt;
-use nom::bytes::streaming::{tag};
-use nom::IResult;
-use nom::number::streaming::{le_u8, le_u16};
 use crate::protocol::packet::RodeCasterPacket;
 use crate::protocol::types::{StreamableType, Value, parse_c_string, write_c_string};
+use anyhow::{Result, bail};
+use byteorder::WriteBytesExt;
+use nom::IResult;
+use nom::bytes::streaming::tag;
+use nom::number::streaming::{le_u8, le_u16};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct PropertyUpdatePacket {
@@ -29,7 +29,14 @@ impl RodeCasterPacket for PropertyUpdatePacket {
         let (input, name) = parse_c_string(input)?;
         let (input, value) = Value::parse_from_stream(input)?;
 
-        Ok((input, Self { indices, name, value }))
+        Ok((
+            input,
+            Self {
+                indices,
+                name,
+                value,
+            },
+        ))
     }
 
     fn to_bytes(&self) -> Result<Vec<u8>> {
@@ -43,7 +50,7 @@ impl RodeCasterPacket for PropertyUpdatePacket {
 
         bytes.write_u8(self.indices.len() as u8)?;
         Self::write_indices(&mut bytes, &self.indices)?;
-        
+
         write_c_string(&mut bytes, &self.name)?;
         self.value.write_to_stream(&mut bytes)?;
 
@@ -63,7 +70,10 @@ impl PropertyUpdatePacket {
                 0x00 => (input, 0), // no index value follows, just zero
                 0x01 => le_u8(input).map(|res| (res.0, res.1 as usize))?,
                 0x02 => le_u16(input).map(|res| (res.0, res.1 as usize))?,
-                _ => Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Verify)))?
+                _ => Err(nom::Err::Error(nom::error::Error::new(
+                    input,
+                    nom::error::ErrorKind::Verify,
+                )))?,
             };
             last_input = input;
             indices.push(index);
@@ -93,10 +103,13 @@ impl PropertyUpdatePacket {
             }
             // unsupported
             else {
-                bail!("Index value {} is too large to be written in the current protocol implementation.", index);
+                bail!(
+                    "Index value {} is too large to be written in the current protocol implementation.",
+                    index
+                );
             }
         }
-        
+
         Ok(())
     }
 }

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use nom::bytes::streaming::tag;
-use nom::IResult;
 use crate::protocol::packet::RodeCasterPacket;
 use crate::protocol::types::{StreamableType, Structured};
+use nom::IResult;
+use nom::bytes::streaming::tag;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceReportPacket {
@@ -12,14 +11,19 @@ pub struct DeviceReportPacket {
 impl RodeCasterPacket for DeviceReportPacket {
     fn from_bytes(input: &[u8]) -> IResult<&[u8], Self>
     where
-        Self: Sized
+        Self: Sized,
     {
         // packet id is 0x02
         let (input, _packet_id) = tag([0x02].as_ref())(input)?;
 
         let (input, root_struct) = Structured::parse_from_stream(input)?;
 
-        Ok((input, DeviceReportPacket { report: root_struct }))
+        Ok((
+            input,
+            DeviceReportPacket {
+                report: root_struct,
+            },
+        ))
     }
 
     fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {

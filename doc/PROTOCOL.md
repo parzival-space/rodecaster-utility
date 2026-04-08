@@ -1,8 +1,12 @@
 # HID Device Protocol
-This documentation is incomplete. I will try to update it as I figure out how the RODECaster Pro II's USB protocol works.
+
+This documentation is incomplete. I will try to update it as I figure out how the RODECaster Pro II's USB protocol
+works.
 
 ## Frame Structure
-Message _can_ be variable in length, but the official App **always** sends 256 byte messages, with the remaining bytes being padded with `0x00`.
+
+Message _can_ be variable in length, but the official App **always** sends 256 byte messages, with the remaining bytes
+being padded with `0x00`.
 A message has the following structure:
 
 | Offset | Length (bytes) | Example          | Description / Note                                                                                 |
@@ -20,9 +24,11 @@ A message has the following structure:
 | 12+n   | m              | `0x01 0x01 0x02` | Command data.                                                                                      |
 
 ## Initialization Packet
+
 Before the RODECaster Pro II accepts control messages, it first needs to be initialized.
 After that the device will respond with multiple messages containing the current state of the device.
-It will also send messages every time an interaction with the device is made, e.g. a button is pressed or a fader is moved.
+It will also send messages every time an interaction with the device is made, e.g. a button is pressed or a fader is
+moved.
 
 The initialization packet has the following structure:
 
@@ -37,11 +43,13 @@ The initialization packet has the following structure:
 | 8      | 1              | `0xB0`           | Unknown            |
 
 ## Control Messages
+
 The messages are sorted based on where they are used in the official App.
 
 ### Display
 
 #### Automatic Brightness Control
+
 This command enables or disables the automatic brightness control of the display.
 
 | Offset | Length (bytes) | Value                       | Description / Note    |
@@ -61,6 +69,7 @@ This command enables or disables the automatic brightness control of the display
 | 28     | 1              | `0x02` (on) or `0x03` (off) | Auto Brightness State |
 
 #### Display Metering
+
 This command changes the display metering mode.
 The RODECaster has 2 modes: "Default" and "Broadcast".
 
@@ -83,6 +92,7 @@ The RODECaster has 2 modes: "Default" and "Broadcast".
 | 23     | 3              | `0x00 0x00 0x00`                       | Unknown            |
 
 #### Rec-Button Mode
+
 This command changes the mode of the Rec-Button.
 The RODECaster has 2 modes: "Pause" and "Stop".
 
@@ -105,6 +115,7 @@ The RODECaster has 2 modes: "Pause" and "Stop".
 | 38     | 3              | `0x00 0x00 0x00`                | Unknown            |
 
 #### Haptics Mode
+
 The RODECaster Pro II has a haptic motor that can be used to provide feedback to the user.
 There are 3 modes: "Off", "Hold" and "Always".
 
@@ -129,6 +140,7 @@ There are 3 modes: "Off", "Hold" and "Always".
 ### System
 
 #### Midi Control
+
 The RODECaster Pro II can be controlled using MIDI messages.
 This command enables or disables MIDI control.
 
@@ -151,8 +163,10 @@ This command enables or disables MIDI control.
 ### Other
 
 #### Trigger 'Transfer Mode'
-The RODECaster Pro II has to be put into a special mode called "Transfer Mode" to begin file transfers for the SMART Pads.
-This command triggers the device to enter this mode, but this is probably not enough to actually start a file transfer, 
+
+The RODECaster Pro II has to be put into a special mode called "Transfer Mode" to begin file transfers for the SMART
+Pads.
+This command triggers the device to enter this mode, but this is probably not enough to actually start a file transfer,
 as the device also needs to be informed about which pad should be updates.
 
 | Offset | Length (bytes) | Value                       | Description / Note  |
