@@ -8,7 +8,7 @@ use crossbeam::channel::{bounded, };
 fn main() {
     CombinedLogger::init(
         vec![
-            TermLogger::new(LevelFilter::Trace, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
+            TermLogger::new(LevelFilter::Debug, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
         ]
     ).unwrap();
 
@@ -31,6 +31,18 @@ fn main() {
                 match DeviceManager::open_device(device) {
                     OpenDeviceResult::RodeCasterProII(device) => {
                         debug!("Successfully opened RodeCaster Pro II device: {:?}", device.get_device_info());
+
+                        loop {
+                            // test if state actually gets updated
+                            sleep(Duration::from_secs(1));
+                            let Ok(state) = device.get_state() else {
+                                debug!("Failed to aquire state. Exiting main loop.");
+                                break;
+                            };
+                            info!("Current device state: {:?}", state.children.first().map(|child| child.children.first().map(|childchild| &childchild.properties)));
+
+                        }
+
                     }
                     OpenDeviceResult::Err(error) => error!("Failed to open RodeCaster Pro II device: {:?}", error),
                 }
