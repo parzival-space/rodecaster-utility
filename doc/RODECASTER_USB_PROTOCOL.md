@@ -14,7 +14,7 @@ on captures from a single RODECaster Pro II unit.
 
 ## 1. HID Transport Layer
 
-The device exposes a HID interface (Interface 9, see `DEVICE.md`).
+The device exposes a HID interface (Interface 9, for the RODECaster Pro II).
 Communication uses **256-byte HID reports**:
 
 | Direction     | Report ID | HID type | Payload size |
