@@ -1,10 +1,10 @@
 use crate::protocol::packet::RodeCasterPacket;
-use crate::protocol::types::{StreamableType, Value, parse_c_string, write_c_string};
-use anyhow::{Result, bail};
+use crate::protocol::types::{parse_c_string, write_c_string, StreamableType, Value};
+use anyhow::{bail, Result};
 use byteorder::WriteBytesExt;
-use nom::IResult;
 use nom::bytes::streaming::tag;
-use nom::number::streaming::{le_u8, le_u16};
+use nom::number::streaming::{le_u16, le_u8};
+use nom::IResult;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct PropertyUpdatePacket {

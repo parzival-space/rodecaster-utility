@@ -1,7 +1,7 @@
 use crate::protocol::packet::RodeCasterPacket;
 use crate::protocol::types::{StreamableType, Structured};
-use nom::IResult;
 use nom::bytes::streaming::tag;
+use nom::IResult;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceReportPacket {

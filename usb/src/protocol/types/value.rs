@@ -1,11 +1,11 @@
-use crate::protocol::types::{StreamableType, parse_c_string, write_c_string};
+use crate::protocol::types::{parse_c_string, write_c_string, StreamableType};
 use anyhow::bail;
 use byteorder::{LittleEndian, WriteBytesExt};
 use log::warn;
-use nom::IResult;
 use nom::bytes::streaming::take;
 use nom::error::{Error, ErrorKind};
-use nom::number::streaming::{le_f64, le_u8, le_u16, le_u32};
+use nom::number::streaming::{le_f64, le_u16, le_u32, le_u8};
+use nom::IResult;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {

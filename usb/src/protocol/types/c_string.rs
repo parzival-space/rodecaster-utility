@@ -1,6 +1,6 @@
 use byteorder::WriteBytesExt;
-use nom::IResult;
 use nom::bytes::streaming::{tag, take_till};
+use nom::IResult;
 use std::io::Write;
 
 /// Helper function that reads a C-style null terminated string.

@@ -1,8 +1,8 @@
-use crate::protocol::types::{StreamableType, Value, parse_c_string};
+use crate::protocol::types::{parse_c_string, StreamableType, Value};
 use anyhow::anyhow;
-use nom::IResult;
 use nom::error::{Error, ErrorKind};
-use nom::number::streaming::{le_u8, le_u16};
+use nom::number::streaming::{le_u16, le_u8};
+use nom::IResult;
 use std::collections::HashMap;
 use std::mem::discriminant;
 

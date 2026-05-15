@@ -1,7 +1,7 @@
-use crate::RodeCasterProII;
 use crate::common::device::AttachableUsbDevice;
 use crate::rodecaster_pro_ii::RodeCasterProIIDevice;
-use anyhow::{Error, Result, bail};
+use crate::RodeCasterProII;
+use anyhow::{bail, Error, Result};
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
 use log::{error, warn};

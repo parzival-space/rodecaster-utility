@@ -1,12 +1,10 @@
-use crate::DeviceIdentifier;
 use crate::common::device::AttachableUsbDevice;
-use crate::protocol::framing::{RodeCasterPacketResult, read_framed_message};
+use crate::protocol::framing::{read_framed_message, RodeCasterPacketResult};
 use crate::protocol::types::Structured;
-use anyhow::{Result, anyhow};
-use byteorder::{LittleEndian, ReadBytesExt};
-use hidapi::{DeviceInfo, HidApi, HidDevice, HidError};
-use log::{debug, error, info, trace, warn};
-use std::io::{Cursor, Read};
+use crate::DeviceIdentifier;
+use anyhow::{anyhow, Result};
+use hidapi::{DeviceInfo, HidApi};
+use log::{error, trace, warn};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
