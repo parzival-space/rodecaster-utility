@@ -17,5 +17,6 @@ pub(crate) struct DeviceRegistryEntry {
 }
 
 pub(crate) const KNOWN_DEVICES: &[DeviceRegistryEntry] = &[
+    dummy_device::REGISTRY_ENTRY,
     rodecaster_pro_ii::REGISTRY_ENTRY,
 ];
