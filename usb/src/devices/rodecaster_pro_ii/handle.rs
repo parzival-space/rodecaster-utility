@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use log::{debug, error};
-use crate::device::manager::DeviceIdentifier;
+use crate::devices::manager::DeviceIdentifier;
 use crate::devices::rodecaster_pro_ii::io::run_io_loop;
 use crate::devices::rodecaster_pro_ii::state::RodeCasterProIIState;
 use crate::error::UsbError;

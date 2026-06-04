@@ -4,7 +4,7 @@ use log::{LevelFilter, debug, error, info};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use std::thread::sleep;
 use std::time::Duration;
-use rodecaster_usb::device::manager::{DeviceManager, HotPlugDeviceEvent};
+use rodecaster_usb::devices::manager::{DeviceManager, HotPlugDeviceEvent};
 use rodecaster_usb::devices::open::{open_device, DeviceHandle};
 
 fn main() {

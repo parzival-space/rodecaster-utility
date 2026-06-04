@@ -1,13 +1,11 @@
-use std::cmp::PartialEq;
 use std::sync::{Arc, Mutex};
-use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
 use log::{error, warn};
-use crate::devices::KNOWN_DEVICES;
-use crate::devices::DeviceType;
+use crate::devices::{DeviceType, KNOWN_DEVICES};
 use crate::error::UsbError;
 
 #[derive(Debug, Clone)]
@@ -22,7 +20,7 @@ impl PartialEq for DeviceIdentifier {
             && self.device_info.vendor_id() == other.device_info.vendor_id()
             && self.device_info.product_id() == other.device_info.product_id()
             && self.device_info.serial_number().unwrap_or_default()
-                == other.device_info.serial_number().unwrap_or_default()
+            == other.device_info.serial_number().unwrap_or_default()
     }
 }
 

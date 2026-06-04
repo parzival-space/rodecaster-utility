@@ -1,4 +1,4 @@
-use crate::device::manager::DeviceIdentifier;
+use crate::devices::manager::DeviceIdentifier;
 use crate::error::UsbError;
 
 #[derive(Debug)]
