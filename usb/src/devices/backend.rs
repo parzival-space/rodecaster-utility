@@ -1,7 +1,7 @@
 use crate::device::manager::DeviceIdentifier;
 use crate::error::UsbError;
 
-pub trait DeviceBackend {
+pub(crate) trait DeviceBackend {
     type Handle;
     fn open(identifier: DeviceIdentifier) -> Result<Self::Handle, UsbError>;
 }

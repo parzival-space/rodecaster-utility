@@ -1,6 +1,7 @@
 pub mod rodecaster_pro_ii;
 pub mod dummy_device;
 pub mod open;
+mod backend;
 
 pub const VID_RODE: u16 = 0x19F7;
 

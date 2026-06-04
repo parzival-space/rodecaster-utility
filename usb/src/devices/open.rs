@@ -1,5 +1,5 @@
-use crate::device::backend::DeviceBackend;
 use crate::device::manager::DeviceIdentifier;
+use crate::devices::backend::DeviceBackend;
 use crate::devices::DeviceType;
 use crate::devices::dummy_device::backend::DummyDeviceBackend;
 use crate::devices::dummy_device::handle::DummyDeviceHandle;

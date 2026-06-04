@@ -1,5 +1,5 @@
-use crate::device::backend::DeviceBackend;
 use crate::device::manager::DeviceIdentifier;
+use crate::devices::backend::DeviceBackend;
 use crate::devices::rodecaster_pro_ii::handle::RodeCasterProIIHandle;
 use crate::error::UsbError;
 
