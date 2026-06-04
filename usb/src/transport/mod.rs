@@ -19,6 +19,9 @@ impl HidTransport {
         report_id_recv: u8,
     ) -> Result<Self, UsbError> {
         let device = device_info.open_device(hid_api)?;
+
+        // todo: it might be possible to run the transport in non-blocking mode
+        // we are running the read loop with a 2ms delay anyways
         device.set_blocking_mode(true)?;
         Ok(Self { device, report_id_send, report_id_recv })
     }
@@ -49,7 +52,6 @@ impl HidTransport {
             offset = 0; // continuation frames are pure payload
         }
 
-        debug!("Read packet of length {} bytes", packet.len());
         Ok(packet)
     }
 

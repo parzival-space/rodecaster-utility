@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, trace};
 use crate::protocol::packet::PropertyUpdatePacket;
 use crate::protocol::types::Structured;
 
@@ -12,10 +12,10 @@ impl RodeCasterProIIState {
         debug!("Applying RodeCasterProII report: {:?}", report);
         self.root = Some(report);
     }
-    
+
     pub fn apply_property_update(&mut self, update: PropertyUpdatePacket) {
         if let Some(root) = self.root.as_mut() {
-            debug!("Applying RodeCasterProII property update: {:?}", update);
+            trace!("Applying RodeCasterProII property update: {:?}", update);
             root.set_property(update.indices, update.name, update.value).unwrap_or_default();
         }
     }
