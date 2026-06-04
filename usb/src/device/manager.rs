@@ -6,7 +6,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use hidapi::{DeviceInfo, HidApi};
 use log::{error, warn};
-use crate::device::registry::KNOWN_DEVICES;
+use crate::devices::KNOWN_DEVICES;
 use crate::devices::DeviceType;
 use crate::error::UsbError;
 
