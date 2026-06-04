@@ -22,8 +22,6 @@ log = "0.4.29"
 thiserror = "2.0.18"
 anyhow = "1.0.102"
 
-# todo: remove tokio
-tokio = "1.50.0"
 crossbeam = "0.8.4"
 
 # usb stuff

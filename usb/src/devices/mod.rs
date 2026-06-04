@@ -15,7 +15,7 @@ pub enum DeviceType {
 pub(crate) struct DeviceRegistryEntry {
     pub vendor_id: u16,
     pub product_ids: &'static [u16],
-    pub device_type: DeviceType, // todo: what is this?
+    pub device_type: DeviceType,
 }
 
 pub(crate) const KNOWN_DEVICES: &[DeviceRegistryEntry] = &[
