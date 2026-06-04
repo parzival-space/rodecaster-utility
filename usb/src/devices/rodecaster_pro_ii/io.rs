@@ -6,7 +6,7 @@ use log::debug;
 use crate::devices::rodecaster_pro_ii::handle::{RodeCasterProIICommand, RodeCasterProIIEvent};
 use crate::devices::rodecaster_pro_ii::{HID_REPORT_ID_RECEIVE, HID_REPORT_ID_SEND};
 use crate::error::UsbError;
-use crate::protocol::framing::{read_framed_message, RodeCasterPacketResult};
+use crate::protocol::framing::{parse_raw_packet, PacketType};
 use crate::transport::HidTransport;
 
 // the device expects the host to send 4 magic bytes to initialize further communication
@@ -37,12 +37,12 @@ pub fn run_io_loop(
             continue;
         }
 
-        match read_framed_message(raw_packet) {
-            Ok(RodeCasterPacketResult::DeviceReport(report)) =>
+        match parse_raw_packet(raw_packet) {
+            Ok(PacketType::DeviceReport(report)) =>
                 event_tx.send(RodeCasterProIIEvent::DeviceReportReceived(report.report)).unwrap_or_default(),
-            Ok(RodeCasterPacketResult::PropertyUpdate(update)) =>
+            Ok(PacketType::PropertyUpdate(update)) =>
                 event_tx.send(RodeCasterProIIEvent::PropertyUpdated(update)).unwrap_or_default(),
-            Ok(RodeCasterPacketResult::Unknown(raw)) =>
+            Ok(PacketType::Unknown(raw)) =>
                 event_tx.send(RodeCasterProIIEvent::UnknownPacket(raw)).unwrap_or_default(),
             Err(e) => {
                 // debug!("Failed to parse packet: {}", e);

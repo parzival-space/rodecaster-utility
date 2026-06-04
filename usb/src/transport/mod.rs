@@ -1,6 +1,5 @@
 use std::cmp::min;
 use hidapi::{DeviceInfo, HidApi, HidDevice};
-use log::debug;
 use crate::error::UsbError;
 
 const FRAME_PAYLOAD_SIZE: usize = 255; // 256 byte hid report, minus 1 report id byte

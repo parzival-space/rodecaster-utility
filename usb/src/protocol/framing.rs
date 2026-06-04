@@ -1,12 +1,9 @@
 use crate::protocol::packet::RodeCasterPacket;
 use crate::protocol::packet::{DeviceReportPacket, PropertyUpdatePacket};
-use nom::bytes::streaming::take;
-use nom::number::streaming::le_u32;
-use std::cmp::min;
 use crate::error::UsbError;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum RodeCasterPacketResult {
+pub enum PacketType {
     Unknown(Vec<u8>),
     PropertyUpdate(PropertyUpdatePacket),
     DeviceReport(DeviceReportPacket),
@@ -23,21 +20,21 @@ pub enum RodeCasterPacketResult {
 // specific ID that is not the same across RODECaster product.
 
 /// Reader for framed RODECaster protocol messages, as they are usually send using HID reports.
-pub fn read_framed_message(bytes: Vec<u8>) -> Result<RodeCasterPacketResult, UsbError> {
+pub fn parse_raw_packet(bytes: Vec<u8>) -> Result<PacketType, UsbError> {
     match bytes.first().copied() {
         Some(0x01) => {
             let result = PropertyUpdatePacket::from_bytes(&bytes)
                 .map(|result| result.1)
                 .or_else(|e| parse_nom_error(e))?;
-            Ok(RodeCasterPacketResult::PropertyUpdate(result))
+            Ok(PacketType::PropertyUpdate(result))
         }
         Some(0x02) => {
             let result = DeviceReportPacket::from_bytes(&bytes)
                 .map(|result| result.1)
                 .or_else(|e| parse_nom_error(e))?;
-            Ok(RodeCasterPacketResult::DeviceReport(result))
+            Ok(PacketType::DeviceReport(result))
         }
-        _ => Ok(RodeCasterPacketResult::Unknown(bytes)),
+        _ => Ok(PacketType::Unknown(bytes)),
     }
 }
 
