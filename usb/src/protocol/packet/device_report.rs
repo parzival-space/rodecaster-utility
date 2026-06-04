@@ -2,6 +2,7 @@ use crate::protocol::packet::RodeCasterPacket;
 use crate::protocol::types::{StreamableType, Structured};
 use nom::bytes::streaming::tag;
 use nom::IResult;
+use crate::error::UsbError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceReportPacket {
@@ -26,7 +27,7 @@ impl RodeCasterPacket for DeviceReportPacket {
         ))
     }
 
-    fn to_bytes(&self) -> anyhow::Result<Vec<u8>> {
+    fn to_bytes(&self) -> Result<Vec<u8>, UsbError> {
         let mut bytes = vec![];
 
         // dummy implementation, structured parsing is not implemented yet

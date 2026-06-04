@@ -1,10 +1,10 @@
 use crate::protocol::packet::RodeCasterPacket;
 use crate::protocol::types::{parse_c_string, write_c_string, StreamableType, Value};
-use anyhow::{bail, Result};
 use byteorder::WriteBytesExt;
 use nom::bytes::streaming::tag;
 use nom::number::streaming::{le_u16, le_u8};
 use nom::IResult;
+use crate::error::UsbError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct PropertyUpdatePacket {
@@ -39,7 +39,7 @@ impl RodeCasterPacket for PropertyUpdatePacket {
         ))
     }
 
-    fn to_bytes(&self) -> Result<Vec<u8>> {
+    fn to_bytes(&self) -> Result<Vec<u8>, UsbError> {
         let mut bytes = vec![];
 
         // packet id is 0x01
@@ -83,7 +83,7 @@ impl PropertyUpdatePacket {
     }
 
     /// Helper function to write the indices list of a PropertyUpdatePacket
-    fn write_indices(stream: &mut Vec<u8>, indices: &Vec<usize>) -> Result<()> {
+    fn write_indices(stream: &mut Vec<u8>, indices: &Vec<usize>) -> Result<(), UsbError> {
         for index in indices {
             if *index == 0x00 {
                 // if the index value is just 0, we can just write a 0x00 byte
@@ -103,10 +103,12 @@ impl PropertyUpdatePacket {
             }
             // unsupported
             else {
-                bail!(
-                    "Index value {} is too large to be written in the current protocol implementation.",
-                    index
-                );
+                return Err(UsbError::ProtocolWrite(
+                    format!(
+                        "Index value {} is too large to be written in the current protocol implementation.",
+                        index
+                    )
+                ));
             }
         }
 

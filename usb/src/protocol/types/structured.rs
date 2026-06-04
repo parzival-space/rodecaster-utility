@@ -1,10 +1,10 @@
 use crate::protocol::types::{parse_c_string, StreamableType, Value};
-use anyhow::anyhow;
 use nom::error::{Error, ErrorKind};
 use nom::number::streaming::{le_u16, le_u8};
 use nom::IResult;
 use std::collections::HashMap;
 use std::mem::discriminant;
+use crate::error::UsbError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Structured {
@@ -79,7 +79,7 @@ impl StreamableType for Structured {
         }
     }
 
-    fn write_to_stream(&self, _: &mut Vec<u8>) -> anyhow::Result<()> {
+    fn write_to_stream(&self, _: &mut Vec<u8>) -> Result<(), UsbError> {
         todo!("There is currently no use case for the write function of the Structured type.")
     }
 }
@@ -121,30 +121,34 @@ impl Structured {
         indices: Vec<usize>,
         property_name: String,
         value: Value,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), UsbError> {
         if indices.is_empty() {
             if let Some(existing_property) = self.properties.get(&property_name) {
                 // ensure the new value has the same type as the old value
                 if discriminant(existing_property) != discriminant(&value) {
-                    return Err(anyhow!(
-                        "Cannot update property {}: type mismatch (existing: {:?}, new: {:?})",
-                        property_name,
-                        existing_property,
-                        value
+                    return Err(UsbError::PropertyError(
+                        format!(
+                            "Cannot update property {}: type mismatch (existing: {:?}, new: {:?})",
+                            property_name,
+                            existing_property,
+                            value
+                        )
                     ));
                 }
                 self.properties.insert(property_name, value);
                 Ok(())
             } else {
-                Err(anyhow!(
-                    "Cannot update property {}: property does not exist",
-                    property_name
+                Err(UsbError::ProtocolWrite(
+                    format!(
+                        "Cannot update property {}: property does not exist",
+                        property_name
+                    )
                 ))?
             }
         } else {
             self.children
                 .get_mut(indices[0])
-                .ok_or_else(|| anyhow!("No such index {}", indices[0]))?
+                .ok_or_else(|| UsbError::ProtocolWrite(format!("No such index {}", indices[0])))?
                 .set_property(indices[1..].to_vec(), property_name, value)
         }
     }

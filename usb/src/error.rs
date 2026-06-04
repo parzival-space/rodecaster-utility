@@ -7,10 +7,13 @@ pub enum UsbError {
 
     #[error("Frame parse error: {0}")]
     FrameParse(String),
-    
+
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
-    
-    #[error("Invalid operation: {0}")]
-    InvalidOperation(String),
+
+    #[error("Protocol write error: {0}")]
+    ProtocolWrite(String),
+
+    #[error("Property update error: {0}")]
+    PropertyError(String),
 }

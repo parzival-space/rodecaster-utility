@@ -1,11 +1,11 @@
 use crate::protocol::types::{parse_c_string, write_c_string, StreamableType};
-use anyhow::bail;
 use byteorder::{LittleEndian, WriteBytesExt};
 use log::warn;
 use nom::bytes::streaming::take;
 use nom::error::{Error, ErrorKind};
 use nom::number::streaming::{le_f64, le_u16, le_u32, le_u8};
 use nom::IResult;
+use crate::error::UsbError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -31,7 +31,6 @@ impl StreamableType for Value {
         match data_type {
             // u32
             0x01 => {
-                assert_eq!(data_length - 1, 4);
                 let (input, value) = le_u32(input)?;
                 Ok((input, Value::U32(value)))
             }
@@ -40,7 +39,6 @@ impl StreamableType for Value {
             0x03 => Ok((input, Value::Bool(false))),
             // f64
             0x04 => {
-                assert_eq!(data_length - 1, 8);
                 let (input, value) = le_f64(input)?;
                 Ok((input, Value::F64(value)))
             }
@@ -82,7 +80,7 @@ impl StreamableType for Value {
         }
     }
 
-    fn write_to_stream(&self, stream: &mut Vec<u8>) -> anyhow::Result<()> {
+    fn write_to_stream(&self, stream: &mut Vec<u8>) -> Result<(), UsbError> {
         match self {
             // 0x01
             Value::U32(value) => {
@@ -118,9 +116,9 @@ impl StreamableType for Value {
                     stream.write_u16::<LittleEndian>((value.len() + 2) as u16)?; // data length: 1 byte for type + string_length
                     write_c_string(stream, value)?;
                 } else {
-                    bail!(
-                        "String value is too long to be written in the current protocol implementation."
-                    );
+                    return Err(UsbError::ProtocolWrite(
+                        "String value is too long to be written in the current protocol implementation.".to_string()
+                    ))
                 }
             }
             // 0x06
@@ -136,10 +134,12 @@ impl StreamableType for Value {
                 }
             }
             Value::Unknown(value) => {
-                bail!(
-                    "Cannot write unknown value type with length {}. Don't try to execute unsupported operations!",
-                    value.len()
-                );
+                return Err(UsbError::ProtocolWrite(
+                    format!(
+                        "Cannot write unknown value type with length {}. Don't try to execute unsupported operations!",
+                        value.len()
+                    )
+                ))
             }
         };
         Ok(())
