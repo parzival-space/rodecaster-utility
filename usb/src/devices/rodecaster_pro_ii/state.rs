@@ -8,12 +8,12 @@ pub struct RodeCasterProIIState {
 }
 
 impl RodeCasterProIIState {
-    pub fn apply_device_report(&mut self, report: Structured) {
+    pub(crate) fn apply_device_report(&mut self, report: Structured) {
         debug!("Applying RodeCasterProII report: {:?}", report);
         self.root = Some(report);
     }
 
-    pub fn apply_property_update(&mut self, update: PropertyUpdatePacket) {
+    pub(crate) fn apply_property_update(&mut self, update: PropertyUpdatePacket) {
         if let Some(root) = self.root.as_mut() {
             trace!("Applying RodeCasterProII property update: {:?}", update);
             root.set_property(update.indices, update.name, update.value).unwrap_or_default();
