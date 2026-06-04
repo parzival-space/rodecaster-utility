@@ -4,6 +4,19 @@ A configuration utility for the RODECaster Pro II.
 This repository is an attempt at reverse engineering the RODECaster Pro II's USB protocol, and creating a
 Linux compatible tool to manage the device's configuration.
 
+### Linux udev rules setup
+
+Install the bundled udev rules so non-root users can access the device:
+
+```bash
+sudo cp 50-rodecaster-pro-ii.rules /etc/udev/rules.d/50-rodecaster-pro-ii.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=hidraw --action=add
+```
+
+The final `udevadm trigger` reapplies rules to currently connected `hidraw` devices, so you usually do not
+need to unplug/replug the RODECaster after installing or updating the rules.
+
 ### Virtual Devices
 
 If you want to use the virtual devices, this is the wrong repository.  

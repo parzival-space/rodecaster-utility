@@ -1,9 +1,11 @@
+use std::os::linux::raw::stat;
 use crossbeam::channel::bounded;
 use log::{LevelFilter, debug, error, info};
-use rodecaster_usb::{DeviceManager, HotPlugDeviceEvent, OpenDeviceResult};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use std::thread::sleep;
 use std::time::Duration;
+use rodecaster_usb::device::manager::{DeviceManager, HotPlugDeviceEvent};
+use rodecaster_usb::devices::open::{open_device, DeviceHandle};
 
 fn main() {
     CombinedLogger::init(vec![TermLogger::new(
@@ -16,8 +18,7 @@ fn main() {
 
     let (device_sender, device_receiver) = bounded(100);
     let (_control_sender, control_receiver) = bounded(100);
-    let device_manager = DeviceManager::new(device_sender, control_receiver)
-        .expect("Failed to create device manager");
+    let device_manager = DeviceManager::new(device_sender, control_receiver).unwrap();
 
     loop {
         let Ok(hotplug_event) = device_receiver.recv() else {
@@ -33,30 +34,34 @@ fn main() {
 
         match hotplug_event {
             HotPlugDeviceEvent::DeviceAttached(device) => {
-                match DeviceManager::open_device(device) {
-                    OpenDeviceResult::RodeCasterProII(device) => {
+                match open_device(device) {
+                    Ok(DeviceHandle::RodeCasterProII(device)) => {
                         debug!(
                             "Successfully opened RodeCaster Pro II device: {:?}",
-                            device.get_device_info()
+                            device.state_snapshot()
                         );
 
                         loop {
                             // test if state actually gets updated
                             sleep(Duration::from_secs(1));
-                            let Ok(state) = device.get_state() else {
-                                debug!("Failed to aquire state. Exiting main loop.");
-                                break;
-                            };
-                            info!(
+                            let state = device.state_snapshot();
+                            if let Some(root) = state.root {
+                                info!(
                                 "Current device state: {:?}",
-                                state.children.first().map(|child| child
+                                root.children.first().map(|child| child
                                     .children
                                     .first()
                                     .map(|childchild| &childchild.properties))
-                            );
+                                );
+                            } else {
+                                error!("No RodeCasterProII state found");
+                            }
                         }
                     }
-                    OpenDeviceResult::Err(error) => {
+                    Ok(_) => {
+                        // do nothing
+                    }
+                    Err(error) => {
                         error!("Failed to open RodeCaster Pro II device: {:?}", error)
                     }
                 }

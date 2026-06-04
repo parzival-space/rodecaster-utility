@@ -12,3 +12,4 @@ crossbeam.workspace = true
 
 rodecaster-usb = { path = "../usb" }
 log = "0.4.29"
+anyhow.workspace = true

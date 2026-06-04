@@ -1,17 +1,6 @@
-mod common;
-mod device_manager;
 mod protocol;
-pub mod rodecaster_pro_ii;
+pub mod error;
+mod transport;
+pub mod device;
+pub mod devices;
 
-/// USB Vendor ID for RODE Devices.
-/// Device specific IDs are defined in the respective device module.
-pub const VID_RODE: u16 = 0x19f7;
-
-pub use device_manager::DeviceIdentifier;
-// re-export device manager
-pub use device_manager::DeviceManager;
-pub use device_manager::DeviceType;
-pub use device_manager::HotPlugDeviceEvent;
-pub use device_manager::OpenDeviceResult;
-
-pub use rodecaster_pro_ii::RodeCasterProII;
