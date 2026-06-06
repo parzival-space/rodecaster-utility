@@ -44,18 +44,18 @@ fn main() {
                         loop {
                             // test if state actually gets updated
                             sleep(Duration::from_secs(1));
-                            let state = device.state_snapshot();
-                            if let Some(root) = state.root {
-                                info!(
-                                "Current device state: {:?}",
-                                root.children.first().map(|child| child
-                                    .children
-                                    .first()
-                                    .map(|childchild| &childchild.properties))
-                                );
-                            } else {
-                                error!("No RodeCasterProII state found");
-                            }
+                            // let state = device.state_snapshot();
+                            // if let Some(root) = state.root {
+                            //     info!(
+                            //     "Current device state: {:?}",
+                            //     root.children.first().map(|child| child
+                            //         .children
+                            //         .first()
+                            //         .map(|childchild| &childchild.properties))
+                            //     );
+                            // } else {
+                            //     error!("No RodeCasterProII state found");
+                            // }
                         }
                     }
                     Ok(_) => {
