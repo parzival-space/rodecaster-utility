@@ -7,7 +7,7 @@ struct RodecasterPacket {
     u8 packet_type;
 
     if (packet_type == 1) {
-        // packet id 1: the packet contains only patch informations for changes made to the device
+        // packet id 1: the packet contains only patch information for changes made to the device
         PatchComponent root;
     } else if (packet_type == 2) {
         // packet id 2: the packet contains the entire device state as a structured object
@@ -16,7 +16,7 @@ struct RodecasterPacket {
 };
 
 /// STRUCTURED DATA
-using CollectonComponent;
+using CollectionComponent;
 using KeyValuePair;
 struct StructuredComponent {
     std::string::NullString name;
@@ -24,7 +24,7 @@ struct StructuredComponent {
     u8 component_kind;
     if (component_kind == 0) {
         // collection, only has children
-        CollectonComponent items;
+        CollectionComponent items;
     } else if (component_kind == 1) {
         // collection with properties, might has children
         u8 properties_count;
@@ -39,7 +39,7 @@ struct StructuredComponent {
     }
 };
 
-struct CollectonComponent {
+struct CollectionComponent {
     u8 child_count_bytes;
     if (child_count_bytes == 0) {
         // empty
