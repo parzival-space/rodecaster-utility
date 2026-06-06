@@ -9,7 +9,7 @@ use rodecaster_usb::devices::open::{open_device, DeviceHandle};
 
 fn main() {
     CombinedLogger::init(vec![TermLogger::new(
-        LevelFilter::Debug,
+        LevelFilter::Trace,
         Config::default(),
         TerminalMode::Mixed,
         ColorChoice::Auto,
