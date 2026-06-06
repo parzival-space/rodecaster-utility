@@ -1,12 +1,16 @@
+use crate::protocol::Parseable;
 use std::thread::sleep;
 use std::time::Duration;
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
-use log::debug;
+use log::{debug, warn};
+use nom::IResult;
 use crate::devices::rodecaster_pro_ii::handle::{RodeCasterProIICommand, RodeCasterProIIEvent};
 use crate::devices::rodecaster_pro_ii::{HID_REPORT_ID_RECEIVE, HID_REPORT_ID_SEND};
 use crate::error::UsbError;
-use crate::protocol::framing::{parse_raw_packet, PacketType};
+use crate::protocol::packets::device_status_packet::DeviceStatusPacket;
+use crate::protocol::packets::{parse_packet, Packet};
+use crate::protocol::packets::property_patch_packet::PropertyPatchPacket;
 use crate::transport::HidTransport;
 
 // the device expects the host to send 4 magic bytes to initialize further communication
@@ -36,18 +40,18 @@ pub fn run_io_loop(
             sleep(Duration::from_millis(2));
             continue;
         }
-
-        match parse_raw_packet(raw_packet) {
-            Ok(PacketType::DeviceReport(report)) =>
-                event_tx.send(RodeCasterProIIEvent::DeviceReportReceived(report.report)).unwrap_or_default(),
-            Ok(PacketType::PropertyUpdate(update)) =>
-                event_tx.send(RodeCasterProIIEvent::PropertyUpdated(update)).unwrap_or_default(),
-            Ok(PacketType::Unknown(raw)) =>
-                event_tx.send(RodeCasterProIIEvent::UnknownPacket(raw)).unwrap_or_default(),
-            Err(e) => {
-                // debug!("Failed to parse packet: {}", e);
-                event_tx.send(RodeCasterProIIEvent::Error(format!("Failed to parse packet: {}", e))).unwrap_or_default();
+        
+        match parse_packet(&*raw_packet) {
+            Ok((_, Packet::PropertyPatch(packet))) => 
+                event_tx.send(RodeCasterProIIEvent::PropertyPatchReceived(packet)).unwrap_or_default(),
+            Ok((_, Packet::DeviceStatus(packet))) =>
+                event_tx.send(RodeCasterProIIEvent::DeviceReportReceived(packet)).unwrap_or_default(),
+            Ok((_, Packet::Unknown(packet))) => {
+                warn!("Received unknown packet: {:02X?}", packet);
+                event_tx.send(RodeCasterProIIEvent::UnknownPacket(packet)).unwrap_or_default();
             }
+            Err(err) =>
+                event_tx.send(RodeCasterProIIEvent::Error(format!("Failed to parse packet: {:?}", err))).unwrap_or_default(),
         }
     }
 

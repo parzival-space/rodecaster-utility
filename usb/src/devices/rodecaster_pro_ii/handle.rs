@@ -6,8 +6,8 @@ use crate::devices::manager::DeviceIdentifier;
 use crate::devices::rodecaster_pro_ii::io::run_io_loop;
 use crate::devices::rodecaster_pro_ii::state::RodeCasterProIIState;
 use crate::error::UsbError;
-use crate::protocol::packet::PropertyUpdatePacket;
-use crate::protocol::types::Structured;
+use crate::protocol::packets::property_patch_packet::PropertyPatchPacket;
+use crate::protocol::packets::device_status_packet::DeviceStatusPacket;
 
 #[derive(Debug, Clone)]
 pub enum RodeCasterProIICommand {
@@ -18,8 +18,8 @@ pub enum RodeCasterProIICommand {
 #[derive(Debug, Clone)]
 pub enum RodeCasterProIIEvent {
     Connected,
-    DeviceReportReceived(Structured), // todo replace with domain object
-    PropertyUpdated(PropertyUpdatePacket), // todo replace with domain object
+    DeviceReportReceived(DeviceStatusPacket), // todo replace with domain object
+    PropertyPatchReceived(PropertyPatchPacket), // todo replace with domain object
     UnknownPacket(Vec<u8>),
     Error(String),
     Disconnect,
@@ -56,7 +56,7 @@ impl RodeCasterProIIHandle {
                 let Ok(mut guard) = state_clone.lock() else { continue };
                 match event {
                     RodeCasterProIIEvent::DeviceReportReceived(report) => guard.apply_device_report(report),
-                    RodeCasterProIIEvent::PropertyUpdated(update) => guard.apply_property_update(update),
+                    RodeCasterProIIEvent::PropertyPatchReceived(update) => guard.apply_property_update(update),
                     _ => {},
                 }
             }
