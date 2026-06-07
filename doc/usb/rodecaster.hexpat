@@ -1,106 +1,132 @@
 import std.string;
+import std.sys;
 
-/// BASE FRAME
-using PatchComponent;
-using StructuredComponent;
-struct RodecasterPacket {
-    u8 packet_type;
 
-    if (packet_type == 1) {
-        // packet id 1: the packet contains only patch information for changes made to the device
-        PatchComponent root;
-    } else if (packet_type == 2) {
-        // packet id 2: the packet contains the entire device state as a structured object
-        StructuredComponent root;
-    }
+/// TYPES
+using NullString = std::string::NullString;
+
+enum ValueType: u8 {
+    U32 = 0x01,
+    BOOL_TRUE = 0x02,
+    BOOL_FALSE = 0x03,
+    F64 = 0x04,
+    STRING = 0x05,
+    DOUBLE = 0x06,
+    ARRAY = 0x08,
 };
 
-/// STRUCTURED DATA
-using CollectionComponent;
-using KeyValuePair;
-struct StructuredComponent {
-    std::string::NullString name;
+struct Value {
+    u8 length_bytes [[hidden]];
+    if (length_bytes == 1) {
+        u8 length;
+    } else if (length_bytes == 2) {
+        u16 length;
+    } else {
+        std::unimplemente();
+    }
 
-    u8 component_kind;
-    if (component_kind == 0) {
-        // collection, only has children
-        CollectionComponent items;
-    } else if (component_kind == 1) {
-        // collection with properties, might has children
-        u8 properties_count;
-        KeyValuePair properties[properties_count];
+    ValueType type;
+    match (type) {
+        (ValueType::U32): u32 value;
+        (ValueType::BOOL_TRUE): bool value = true;
+        (ValueType::BOOL_FALSE): bool value = false;
+        (ValueType::F64): double value;
+        (ValueType::STRING): NullString value;
+        (ValueType::DOUBLE): double value;
+        (ValueType::ARRAY): {
+            u8 remaing_length_bytes [[hidden]];
+            if (remaing_length_bytes == 0) {
+                u8 remaing_length = 0;
+            } else if (remaing_length_bytes == 1) {
+                u8 remaing_length;
+            } else if (remaing_length_bytes == 2) {
+                u16 remaing_length;
+            } else {
+                std::unimplemented();
+            }
 
-        u8 has_children;
-        if (has_children == 1) {
-            // collections with properties can have a max of 255 children
-            u8 child_count;
-            StructuredComponent children[child_count];
+            u8 value[remaing_length];
         }
     }
 };
 
-struct CollectionComponent {
-    u8 child_count_bytes;
-    if (child_count_bytes == 0) {
-        // empty
-    } else if (child_count_bytes == 1) {
-        // u8 length
-        u8 child_count;
-        StructuredComponent children[child_count] [[inline]];
-    } else if (child_count_bytes == 2) {
-        // u16 length
-        u16 child_count;
-        StructuredComponent children[child_count] [[inline]];
+struct KeyValuePair {
+    NullString name;
+    Value value;
+};
+
+enum CompositeType : u8 {
+    Collection = 0x00,
+    Object = 0x01,
+};
+
+struct Composite {
+    NullString name;
+    CompositeType type;
+
+    match (type) {
+        (CompositeType::Collection): {
+            u8 child_count_bytes [[hidden]];
+            if (child_count_bytes == 0) {
+                u8 child_count = 0;
+            } else if (child_count_bytes == 1) {
+                u8 child_count;
+            } else if (child_count_bytes == 2) {
+                u16 child_count;
+            } else {
+                std::unimplemented();
+            }
+
+            Composite children[child_count];
+        }
+        (CompositeType::Object): {
+            u8 properties_count;
+            KeyValuePair properties[properties_count];
+
+            u8 has_children [[hidden]]; // note: might be the child_count_bytes counter
+            if (has_children == 1) {
+                u8 child_count;
+                Composite children[child_count];
+            }
+        }
     }
 };
 
-using Value;
-struct PatchComponent {
-    // first byte seems to be always 0x01. it's very likely a length indicator for the next
-    // indices_count byte. until we have found an actual packet using something different here
-    // we will just assume that the first byte is always 0x01.
-    u8 unknown1;
+struct Index {
+    u8 value_bytes [[hidden]];
+    if (value_bytes == 0) {
+        u8 value = 0;
+    } else if (value_bytes == 1) {
+        u8 value;
+    } else if (value_bytes == 2) {
+        u16 value;
+    } else {
+        std::unimplemented();
+    }
+};
+
+/// PACKETS
+struct PropertyPatchPacket {
+    u8 packet_kind_id; // shoud always be 0x01 for this packet
+    std::assert(packet_kind_id == 0x01, "This is not a PropertyPatchPacket");
+
+    u8 unknown1 [[comment("Might be the byte count for the indices count, for now we always expect 0x01 here.")]];
+    std::assert(unknown1 == 0x01, "unknown1 did not match the expected 0x01");
 
     u8 indices_count;
-    u8 indices[indices_count];
+    Index indices[indices_count];
 
-    std::string::NullString name;
+    NullString name;
     Value value;
+
 };
 
-/// PRIMITIVES
-using Value;
-struct KeyValuePair {
-    std::string::NullString name;
+struct DeviceStatusPacket {
+    u8 packet_kind_id; // shoud always be 0x02 for this packet
+    std::assert(packet_kind_id == 0x02, "This is not a DeviceStatusPacket");
 
-    Value value;
+    Composite status;
 };
 
-struct Value {
-    u8 data_length_bytes; // amount of bytes used to indicated the data length
-    if (data_length_bytes == 1) {
-        u8 data_length;
-    } else if (data_length_bytes == 2) {
-        u16 data_length;
-    }
-
-    u8 data_type;
-    if (data_type == 1) { // u32
-        u32 data;
-    } else if (data_type == 2) { // bool: true
-        bool data = true [[comment("TRUE")]];
-    } else if (data_type == 3) { // bool: false
-        bool data = false [[comment("FALSE")]];;
-    } else if (data_type == 4) { // f64
-        double data;
-    } else if (data_type == 5) { // string
-        std::string::NullString data;
-    } else if (data_type == 6) { // f64 (possibly double)
-        double data;
-    } else if (data_type == 8) { // combined (multiple values)
-        u8 data[data_length - 1]; // basically a loop of Properties, but I didn't feel like implementing this in ImHex
-    }
-};
-
-
-RodecasterPacket packet_root @ 0x00;
+/// MAIN
+DeviceStatusPacket packet @ 0x00;

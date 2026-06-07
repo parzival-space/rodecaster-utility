@@ -33,7 +33,7 @@ impl Parseable for Value {
             2u8 => le_u16(data).map(|res| (res.0, res.1 as usize))?, // u16 for size
             _ => Err(nom::Err::Error(
                 nom::error::Error::new(data, nom::error::ErrorKind::LengthValue)
-            ))?, // invalid amount of bytes
+            ))?, // invalid number of bytes
         };
 
         let (mut data, value_type) = le_u8(data)?;

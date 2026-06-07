@@ -121,10 +121,10 @@ impl Parseable for Composite {
                 let (mut data, has_children) = le_u8(data).map(|res| (res.0, res.1 != 0))?;
                 let mut children = Vec::with_capacity(0);
                 if has_children {
-                    let (mut data_boxed, children_count) = le_u8(data)?;
-                    children = Vec::with_capacity(children_count.into());
+                    let (mut data_boxed, child_count) = le_u8(data)?;
+                    children = Vec::with_capacity(child_count.into());
 
-                    for _ in 0..children_count {
+                    for _ in 0..child_count {
                         let (data_looped, child) = Self::parse(data_boxed)?;
                         data_boxed = data_looped;
                         children.push(child);
