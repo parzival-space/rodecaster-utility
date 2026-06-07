@@ -57,7 +57,7 @@ impl Composite {
                     "Cannot apply patch to composite '{}': child index {} out of bounds",
                     self.name, indices[0]
                 )))?
-                .apply_patch(indices, name, value)
+                .apply_patch(indices[1..].to_vec(), name, value)
         }
     }
 }
