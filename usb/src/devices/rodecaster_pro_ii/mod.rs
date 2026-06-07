@@ -10,7 +10,7 @@ pub(crate) const PID_RODECASTER_PRO_II: &[u16] = &[0x0037, 0x0072, 0x0078, 0x003
 pub(crate) const HID_REPORT_ID_SEND: u8 = 0x03;
 pub(crate) const HID_REPORT_ID_RECEIVE: u8 = 0x04;
 
-pub const REGISTRY_ENTRY: DeviceRegistryEntry = DeviceRegistryEntry {
+pub(crate) const REGISTRY_ENTRY: DeviceRegistryEntry = DeviceRegistryEntry {
     vendor_id: VID_RODE,
     product_ids: PID_RODECASTER_PRO_II,
     device_type: DeviceType::RodeCasterProII,
