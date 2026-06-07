@@ -2,7 +2,7 @@ use std::io::Write;
 use log::warn;
 use nom::bytes::streaming::tag;
 use nom::IResult;
-use nom::number::streaming::le_u8;
+use nom::number::streaming::{le_u16, le_u8};
 use crate::protocol::Parseable;
 use crate::protocol::types::value::Value;
 
@@ -59,7 +59,7 @@ impl Parseable for PropertyPatchPacket {
             let (data_boxed, index) = match index_length {
                 0u8 => (data_boxed, 0), // 0 entry
                 1u8 => le_u8(data_boxed).map(|res| (res.0, res.1 as usize))?, // 1 byte index
-                2u8 => le_u8(data_boxed).map(|res| (res.0, res.1 as usize - 1))?, // 2 byte index
+                2u8 => le_u16(data_boxed).map(|res| (res.0, res.1 as usize - 1))?, // 2 byte index
                 _ => Err(nom::Err::Failure(
                     nom::error::Error::new(data_boxed, nom::error::ErrorKind::Digit)
                 ))? // invalid index length
