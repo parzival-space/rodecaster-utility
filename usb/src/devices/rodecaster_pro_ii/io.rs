@@ -1,17 +1,15 @@
-use crate::protocol::Parseable;
 use std::thread::sleep;
 use std::time::Duration;
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
-use log::{debug, warn};
-use nom::IResult;
+use log::trace;
 use crate::devices::rodecaster_pro_ii::handle::{RodeCasterProIICommand, RodeCasterProIIEvent};
-use crate::devices::rodecaster_pro_ii::{HID_REPORT_ID_RECEIVE, HID_REPORT_ID_SEND};
 use crate::error::UsbError;
-use crate::protocol::packets::device_status_packet::DeviceStatusPacket;
 use crate::protocol::packets::{parse_packet, Packet};
-use crate::protocol::packets::property_patch_packet::PropertyPatchPacket;
 use crate::transport::HidTransport;
+
+const HID_REPORT_ID_SEND: u8 = 0x03;
+const HID_REPORT_ID_RECEIVE: u8 = 0x04;
 
 // the device expects the host to send 4 magic bytes to initialize further communication
 const INIT_PAYLOAD: &[u8] = &[0xAD, 0x10, 0xA7, 0xB0];
@@ -47,7 +45,7 @@ pub fn run_io_loop(
             Ok((_, Packet::DeviceStatus(packet))) =>
                 event_tx.send(RodeCasterProIIEvent::DeviceReportReceived(packet)).unwrap_or_default(),
             Ok((_, Packet::Unknown(packet))) => {
-                warn!("Received unknown packet: {:02X?}", packet);
+                trace!("Received unknown packet: {:02X?}", packet);
                 event_tx.send(RodeCasterProIIEvent::UnknownPacket(packet)).unwrap_or_default();
             }
             Err(err) =>
