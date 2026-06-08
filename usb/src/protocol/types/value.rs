@@ -65,7 +65,7 @@ impl Parseable for Value {
         }
     }
 
-    fn serialize<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
+    fn write_to<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
         match self {
             Value::U32(value) => {
                 writer.write_u8(1u8)?; // num length bytes (u8)
@@ -93,12 +93,12 @@ impl Parseable for Value {
                     writer.write_u8(1u8)?; // num length bytes (u8)
                     writer.write_u8((value.len() + 2) as u8)?;
                     writer.write_u8(5u8)?; // type byte for string
-                    value.serialize(writer)
+                    value.write_to(writer)
                 } else if value.len() + 2 <= u16::MAX as usize {
                     writer.write_u8(2u8)?; // num length bytes (u16)
                     writer.write_u16::<LE>((value.len() + 2) as u16)?;
                     writer.write_u8(5u8)?; // type byte for string
-                    value.serialize(writer)
+                    value.write_to(writer)
                 } else {
                     Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
@@ -115,9 +115,9 @@ impl Parseable for Value {
             Value::Array(values) => {
                 let mut serialized_values = Vec::new();
                 for value in values {
-                    // sadly we have to cache the serialized values here to determine
+                    // sadly, we have to cache the serialized values here to determine
                     // the size in bytes
-                    value.serialize(&mut serialized_values)?;
+                    value.write_to(&mut serialized_values)?;
                 }
 
                 // add 1 byte for type
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn test_serialize_u32() {
         let mut stream = Vec::new();
-        let result = Value::U32(CAPTURED_U32_PARSED).serialize(&mut stream);
+        let result = Value::U32(CAPTURED_U32_PARSED).write_to(&mut stream);
         assert!(result.is_ok());
         assert_eq!(stream, CAPTURED_U32);
     }
@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn test_serialize_bool_true() {
         let mut stream = Vec::new();
-        let result = Value::Bool(CAPTURED_BOOL_TRUE_PARSED).serialize(&mut stream);
+        let result = Value::Bool(CAPTURED_BOOL_TRUE_PARSED).write_to(&mut stream);
         assert!(result.is_ok());
         assert_eq!(stream, CAPTURED_BOOL_TRUE);
     }
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn test_serialize_bool_false() {
         let mut stream = Vec::new();
-        let result = Value::Bool(CAPTURED_BOOL_FALSE_PARSED).serialize(&mut stream);
+        let result = Value::Bool(CAPTURED_BOOL_FALSE_PARSED).write_to(&mut stream);
         assert!(result.is_ok());
         assert_eq!(stream, CAPTURED_BOOL_FALSE);
     }
@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn test_serialize_f64() {
         let mut stream = Vec::new();
-        let result = Value::F64(CAPTURED_F64_PARSED).serialize(&mut stream);
+        let result = Value::F64(CAPTURED_F64_PARSED).write_to(&mut stream);
         assert!(result.is_ok());
         assert_eq!(stream, CAPTURED_F64);
     }
@@ -250,7 +250,7 @@ mod tests {
     #[test]
     fn test_serialize_string() {
         let mut stream = Vec::new();
-        let result = Value::String(CAPTURED_STRING_PARSED.to_string()).serialize(&mut stream);
+        let result = Value::String(CAPTURED_STRING_PARSED.to_string()).write_to(&mut stream);
         assert!(result.is_ok());
         assert_eq!(stream, CAPTURED_STRING);
     }
@@ -268,7 +268,7 @@ mod tests {
     #[test]
     fn test_serialize_array() {
         let mut stream = Vec::new();
-        let result = Value::Array(CAPTURED_ARRAY_PARSED.to_vec().iter().map(|b| Value::Bool(*b)).collect()).serialize(&mut stream);
+        let result = Value::Array(CAPTURED_ARRAY_PARSED.to_vec().iter().map(|b| Value::Bool(*b)).collect()).write_to(&mut stream);
         assert!(result.is_ok());
         assert_eq!(stream, CAPTURED_ARRAY);
     }

@@ -9,5 +9,5 @@ pub(crate) trait Parseable {
 
     fn parse(data: &[u8]) -> IResult<&[u8], Self> where Self: Sized;
 
-    fn serialize<W: Write>(&self, writer: &mut W) -> Result<()>;
+    fn write_to<W: Write>(&self, writer: &mut W) -> Result<()>;
 }

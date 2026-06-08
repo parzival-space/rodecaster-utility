@@ -22,7 +22,7 @@ impl Parseable for String {
         Ok((data, string))
     }
 
-    fn serialize<W: Write>(&self, writer: &mut W) -> Result<()> {
+    fn write_to<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_all(self.as_bytes())?;
         writer.write_u8(0x00) // null terminator
     }
@@ -72,7 +72,7 @@ mod tests {
         let expected = [72u8, 101u8, 108u8, 108u8, 111u8, 0u8];
 
         let mut stream = Vec::new();
-        let result = input.serialize(&mut stream);
+        let result = input.write_to(&mut stream);
         assert!(result.is_ok());
 
         assert_eq!(stream, expected);

@@ -35,9 +35,9 @@ impl Parseable for DeviceStatusPacket {
         Ok((data, Self { status }))
     }
 
-    fn serialize<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
+    fn write_to<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
         writer.write_all(&[PACKET_ID])?;
 
-        self.status.serialize(writer)
+        self.status.write_to(writer)
     }
 }

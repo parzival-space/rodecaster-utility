@@ -146,7 +146,7 @@ impl Parseable for Composite {
 
     }
 
-    fn serialize<W: Write>(&self, _writer: &mut W) -> std::io::Result<()> {
+    fn write_to<W: Write>(&self, _writer: &mut W) -> std::io::Result<()> {
         todo!(
             "Serializing of the Composite type is currently not implemented, as there is no use\
             case for sending it down the wire back to the device. For updating properties use the\
@@ -179,7 +179,7 @@ impl Parseable for CompositeType {
         }
     }
 
-    fn serialize<W: Write>(&self, _writer: &mut W) -> std::io::Result<()> {
+    fn write_to<W: Write>(&self, _writer: &mut W) -> std::io::Result<()> {
         todo!(
             "See Composite::serialize for more details."
         )

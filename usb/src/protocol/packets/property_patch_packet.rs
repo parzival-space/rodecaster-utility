@@ -74,7 +74,7 @@ impl Parseable for PropertyPatchPacket {
         Ok((data, Self { indices, name, value }))
     }
 
-    fn serialize<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
+    fn write_to<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
         todo!()
     }
 }
