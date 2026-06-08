@@ -3,11 +3,12 @@ use std::io::{Write};
 use std::mem::discriminant;
 use nom::IResult;
 use nom::number::streaming::{le_u8, le_u16};
+use serde::{Deserialize, Serialize};
 use crate::error::UsbError;
 use crate::protocol::Parseable;
 use crate::protocol::types::value::Value;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct Composite {
     name: String,
     composite_type: CompositeType,
@@ -155,7 +156,7 @@ impl Parseable for Composite {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) enum CompositeType {
     Collection,
     Object,

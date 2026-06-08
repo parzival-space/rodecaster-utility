@@ -2,9 +2,10 @@ use std::io::Write;
 use byteorder::{WriteBytesExt, LE};
 use nom::IResult;
 use nom::number::streaming::{le_u16, le_u8, le_u32, le_f64};
+use serde::{Deserialize, Serialize};
 use crate::protocol::Parseable;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) enum Value {
     U32(u32),
     Bool(bool),
