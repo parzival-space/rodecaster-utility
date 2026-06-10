@@ -25,6 +25,7 @@ mod tests {
 
     /// This test is used as a dev tool to download the current device status
     /// of the RODECaster Pro II as a json file.
+    /// todo: remove this entire test, this is currently only used for development purposes
     #[test]
     #[ignore]
     pub fn rodecaster_pro_ii_status_json() {
