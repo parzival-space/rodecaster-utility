@@ -2,9 +2,10 @@ use std::thread::sleep;
 use std::time::Duration;
 use clap::Parser;
 use crossbeam::channel::{bounded, TryRecvError};
-use log::{error, info, LevelFilter};
+use log::{debug, error, info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode};
 use rodecaster_usb::devices::manager::{DeviceManager, HotPlugDeviceEvent};
+use rodecaster_usb::devices::open::open_device;
 
 ///
 #[derive(Parser, Debug)]
@@ -36,7 +37,19 @@ fn main() {
             Ok(HotPlugDeviceEvent::DeviceAttached(device)) => {
                 info!("New device attached: {:?}", device);
                 // this is where new devices would be handled
-                // see rodecaster_usb::devices::open::open_device
+                // dummy implementation below
+                match open_device(device) {
+                    Ok(device) => {
+                        debug!("Opened device: {:?}", device);
+                        loop {
+                            // again dummy implementation, just to keep the connetion alive for now
+                            sleep(Duration::from_secs(1));
+                        }
+                    }
+                    Err(e) => {
+                        error!("Failed to open device: {:?}", e);
+                    }
+                }
             }
             Ok(HotPlugDeviceEvent::DeviceRemoved(device)) => {
                 info!("Device removed: {:?}", device);
