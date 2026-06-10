@@ -8,7 +8,7 @@ use crate::error::UsbError;
 use crate::protocol::Parseable;
 use crate::protocol::types::value::Value;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub(crate) struct Composite {
     name: String,
     composite_type: CompositeType,
@@ -156,10 +156,11 @@ impl Parseable for Composite {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub(crate) enum CompositeType {
-    Collection,
+    #[default]
     Object,
+    Collection,
 }
 
 impl Parseable for CompositeType {
