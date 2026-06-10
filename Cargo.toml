@@ -22,6 +22,9 @@ log = "0.4.32"
 thiserror = "2.0.18"
 anyhow = "1.0.102"
 
+serde = "1.0.228"
+serde_json = "1.0.150"
+
 crossbeam = "0.8.4"
 
 # usb stuff
