@@ -7,6 +7,7 @@ use crate::devices::rodecaster_pro_ii::backend::RodeCasterProIIBackend;
 use crate::devices::rodecaster_pro_ii::handle::RodeCasterProIIHandle;
 use crate::error::UsbError;
 
+#[derive(Debug)]
 pub enum DeviceHandle {
     Dummy(DummyDeviceHandle),
     RodeCasterProII(RodeCasterProIIHandle),
