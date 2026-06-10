@@ -1,0 +1,20 @@
+[package]
+name = "rodecaster-daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+log.workspace = true
+simplelog.workspace = true
+
+# cli stuff
+clap = { workspace = true, features = ["derive"] }
+
+# async / thread stuff
+crossbeam.workspace = true
+
+# project dependencies
+rodecaster-usb = { path = "../usb" }
