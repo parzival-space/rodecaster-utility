@@ -30,7 +30,7 @@ fn main() {
     // todo: implement device handling (dummy implementation below)
     let (hotplug_sender, hotplug_receiver) = bounded(100);
     let (_control_sender, control_receiver ) = bounded(100);
-    let device_manager = DeviceManager::new(hotplug_sender, control_receiver);
+    let _device_manager = DeviceManager::new(hotplug_sender, control_receiver);
 
     loop {
         match hotplug_receiver.try_recv() {
