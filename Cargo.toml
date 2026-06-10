@@ -2,7 +2,7 @@
 resolver = "3"
 
 members = [
-    "testApp", "testMessageParserApp",
+    "testApp",
     "usb"
 ]
 
@@ -18,15 +18,16 @@ authors = [
 repository = "https://github.com/parzival-space/rodecaster-utility"
 
 [workspace.dependencies]
-log = "0.4.29"
+log = "0.4.32"
 thiserror = "2.0.18"
 anyhow = "1.0.102"
 
-# todo: remove tokio
-tokio = "1.50.0"
+serde = "1.0.228"
+serde_json = "1.0.150"
+
 crossbeam = "0.8.4"
 
 # usb stuff
 byteorder = "1.5.0"
-hidapi = { version = "2.6.5", features = ["linux-static-hidraw"] }
+hidapi = { version = "2.6.6", features = ["linux-static-hidraw"] }
 nom = "8.0.0"

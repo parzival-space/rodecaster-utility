@@ -1,2 +1,5 @@
 /target
 .idea
+
+# exported status files
+/rodecaster_pro_ii_status.bin

@@ -7,10 +7,19 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "download-pro-ii-state"
+path = "src/bin/download_rodecaster_pro_ii_state.rs"
+
 [dependencies]
 log.workspace = true
-anyhow.workspace = true
+thiserror.workspace = true
+
 hidapi.workspace = true
 byteorder.workspace = true
 crossbeam.workspace = true
 nom.workspace = true
+
+# todo: remove serde and serde_json as they are currently only used in a test
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true

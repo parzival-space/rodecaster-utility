@@ -1,1 +1,0 @@
-Moved to [doc/PROTOCOL.md](./doc/PROTOCOL.md)
