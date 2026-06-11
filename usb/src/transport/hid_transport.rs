@@ -6,23 +6,18 @@ const FRAME_PAYLOAD_SIZE: usize = 255; // 256 byte hid report, minus 1 report id
 
 pub struct HidTransport {
     device: HidDevice,
-    report_id_send: u8,
-    report_id_recv: u8,
+    report_id: u8,
 }
 
 impl HidTransport {
     pub fn open(
         device_info: &DeviceInfo,
         hid_api: &HidApi,
-        report_id_send: u8,
-        report_id_recv: u8,
+        report_id: u8,
     ) -> Result<Self, UsbError> {
         let device = device_info.open_device(hid_api)?;
-
-        // todo: it might be possible to run the transport in non-blocking mode
-        // we are running the read loop with a 2ms delay anyways
-        device.set_blocking_mode(true)?;
-        Ok(Self { device, report_id_send, report_id_recv })
+        device.set_blocking_mode(false)?;
+        Ok(Self { device, report_id })
     }
 
     /// Read one fully reassembled packet from the device.
@@ -60,7 +55,7 @@ impl HidTransport {
         let payload: Vec<u8> = length_prefix.iter().chain(data.iter()).copied().collect();
 
         for chunk in payload.chunks(FRAME_PAYLOAD_SIZE) {
-            let mut frame = vec![self.report_id_send];
+            let mut frame = vec![self.report_id];
             frame.extend_from_slice(chunk);
             frame.resize(FRAME_PAYLOAD_SIZE + 1, 0); // pad to full frame size
             self.device.send_output_report(&frame)?;
@@ -70,7 +65,7 @@ impl HidTransport {
 
     fn read_frame(&self) -> Result<Vec<u8>, UsbError> {
         let mut buf = [0u8; FRAME_PAYLOAD_SIZE + 1];
-        buf[0] = self.report_id_recv;
+        buf[0] = self.report_id;
         self.device.read(&mut buf)?;
         Ok(buf[1..].to_vec()) // skip report id byte
     }

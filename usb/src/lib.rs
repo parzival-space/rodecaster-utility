@@ -1,5 +1,6 @@
 pub mod error;
 mod transport;
-pub mod devices;
 mod protocol;
+pub mod device;
+pub mod manager;
 

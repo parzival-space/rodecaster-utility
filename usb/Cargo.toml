@@ -7,10 +7,6 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
-[[bin]]
-name = "download-pro-ii-state"
-path = "src/bin/download_rodecaster_pro_ii_state.rs"
-
 [dependencies]
 log.workspace = true
 thiserror.workspace = true
