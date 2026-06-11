@@ -9,10 +9,6 @@ use log::{error, warn};
 use crate::device::model::DeviceModel;
 use crate::error::UsbError;
 
-// todo move this into the model stuff, this should be as generic as possible
-const VID_RODE: u16 = 0x19f7;
-const PIDS_RODE_PRO_II: [u16; 6] = [0x0037, 0x0072, 0x0078, 0x0030, 0x0094, 0x0092];
-
 /// Contains information about a connected device.
 #[derive(Debug, Clone)]
 pub struct DeviceIdentifier {
@@ -120,9 +116,8 @@ impl DeviceManager {
                 continue;
             }
 
-            let detected: Vec<DeviceIdentifier> = hid_api.device_list()
-                .filter(|d| d.vendor_id() == VID_RODE) // only rode devices
-                .filter(|d| PIDS_RODE_PRO_II.contains(&d.product_id())) // todo: move this into model info
+            let detected: Vec<DeviceIdentifier> = hid_api.device_list() // only rode devices
+                .filter(|d| DeviceModel::from_device_info(d.to_owned().to_owned()).is_some()) // todo: move this into model info
                 .map(|d| DeviceIdentifier::from(d.to_owned()))
                 .collect();
             
