@@ -3,9 +3,9 @@ use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 use crossbeam::atomic::AtomicCell;
-use crossbeam::channel::{unbounded, Receiver, Sender, TryRecvError};
+use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
-use log::{error, warn};
+use log::{error, trace, warn};
 use crate::device::model::DeviceModel;
 use crate::error::UsbError;
 
@@ -58,6 +58,7 @@ pub struct DeviceManager {
     shutdown_requested: Arc<AtomicCell<bool>>,
     receiver: Receiver<DeviceStateChanged>,
     device_scan_thread: Option<thread::JoinHandle<()>>,
+    first_receiver: Receiver<()>,
 }
 
 impl DeviceManager {
@@ -66,22 +67,29 @@ impl DeviceManager {
         let shutdown_requested = Arc::new(AtomicCell::new(false));
         let (sender, receiver) = unbounded();
 
+        // we need to wait for the device scan thread to complete the first enumeration
+        let (first_sender, first_receiver) = bounded(0);
+
         // spawn device scan thread
         let devices_clone = devices.clone();
         let shutdown_requested_clone = shutdown_requested.clone();
         let device_scan_thread = thread::Builder::new()
             .name("device-scan-thread".into())
             .spawn(move || {
-                if let Err(err) = Self::scan_devices(devices_clone.clone(), sender, shutdown_requested_clone) {
+                if let Err(err) = Self::scan_devices(
+                    devices_clone.clone(), sender,
+                    shutdown_requested_clone, first_sender) {
                     error!("Device scan thread failed: {}", err);
                 }
             })?;
+
 
         Ok(Self {
             devices,
             shutdown_requested,
             receiver,
             device_scan_thread: Some(device_scan_thread),
+            first_receiver,
         })
     }
 
@@ -97,14 +105,32 @@ impl DeviceManager {
         }
         Ok(())
     }
+
+    pub fn devices(&self) -> Vec<DeviceIdentifier> {
+        match self.devices.lock() {
+            Ok(devices) => devices.clone(),
+            Err(_) => Vec::new(),
+        }
+    }
+
+    pub fn wait_for_first_enumeration(&self, timeout: Duration) -> Result<(), UsbError> {
+        self.first_receiver.recv_timeout(timeout)
+            .map_err(|_| UsbError::Timeout)
+    }
     
     pub fn try_recv(&self) -> Result<DeviceStateChanged, TryRecvError> {
         self.receiver.try_recv()
     }
 
-    fn scan_devices(devices: Arc<Mutex<Vec<DeviceIdentifier>>>, sender: Sender<DeviceStateChanged>, shutdown_requested: Arc<AtomicCell<bool>>) -> Result<(), UsbError> {
+    fn scan_devices(
+        devices: Arc<Mutex<Vec<DeviceIdentifier>>>,
+        sender: Sender<DeviceStateChanged>,
+        shutdown_requested: Arc<AtomicCell<bool>>,
+        first_sender: Sender<()>,
+    ) -> Result<(), UsbError> {
         let mut hid_api = HidApi::new()?;
 
+        trace!("Running device scan thread");
         loop {
             if shutdown_requested.load() {
                 break;
@@ -112,7 +138,7 @@ impl DeviceManager {
 
             if hid_api.refresh_devices().is_err() {
                 warn!("Failed to refresh devices");
-                thread::sleep(Duration::from_millis(100));
+                sleep(Duration::from_millis(100));
                 continue;
             }
 
@@ -144,7 +170,10 @@ impl DeviceManager {
                     sender.send(DeviceStateChanged::Disconnected(device)).unwrap_or_default();
                 }
             }
-            
+
+            // signal that the first enumeration is complete
+            first_sender.send(()).unwrap_or_default();
+
             sleep(Duration::from_millis(100));
         }
 

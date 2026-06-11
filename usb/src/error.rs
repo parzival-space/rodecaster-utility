@@ -16,6 +16,9 @@ pub enum UsbError {
 
     #[error("Property update error: {0}")]
     PropertyError(String),
+    
+    #[error("Timeout")]
+    Timeout,
 
     #[error("Protocol parse error: {0}")]
     NomParse(#[from] nom::Err<nom::error::Error<&'static[u8]>>),
