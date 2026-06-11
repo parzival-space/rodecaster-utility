@@ -9,7 +9,7 @@ use crate::protocol::Parseable;
 use crate::protocol::types::value::Value;
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub(crate) struct Composite {
+pub struct Composite {
     name: String,
     composite_type: CompositeType,
     has_children: bool,
@@ -157,7 +157,7 @@ impl Parseable for Composite {
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub(crate) enum CompositeType {
+pub enum CompositeType {
     #[default]
     Object,
     Collection,

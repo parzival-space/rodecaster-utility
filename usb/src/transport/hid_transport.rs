@@ -16,7 +16,7 @@ impl HidTransport {
         report_id: u8,
     ) -> Result<Self, UsbError> {
         let device = device_info.open_device(hid_api)?;
-        device.set_blocking_mode(false)?;
+        device.set_blocking_mode(true)?; // todo: this has to set to false later
         Ok(Self { device, report_id })
     }
 

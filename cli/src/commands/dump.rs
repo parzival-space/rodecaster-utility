@@ -1,6 +1,5 @@
 use std::time::Duration;
 use log::{error, info};
-use rodecaster_usb::manager::DeviceManager;
 use crate::commands::{CommandContext, CommandHandler};
 
 pub struct DumpCommand {}
@@ -21,5 +20,13 @@ impl CommandHandler for DumpCommand {
         let device = device.unwrap();
 
         info!("Found {:?} with serial number {:?}", device.device_model, device.serial_number);
+
+        let device_handle = device.open(Duration::from_secs(10))
+            .expect("Failed to open device");
+
+        let state_snapshot = device_handle.state_snapshot();
+        let state_json = serde_json::to_string_pretty(&state_snapshot)
+            .expect("Failed to serialize device state");
+        println!("{}", state_json);
     }
 }

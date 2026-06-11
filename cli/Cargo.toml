@@ -11,4 +11,6 @@ log.workspace = true
 simplelog.workspace = true
 clap = { workspace = true, features = ["derive"] }
 
+serde_json.workspace = true
+
 rodecaster-usb.path = "../usb"

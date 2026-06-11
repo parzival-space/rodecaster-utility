@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::protocol::Parseable;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub(crate) enum Value {
+pub enum Value {
     U32(u32),
     Bool(bool),
     F64(f64),

@@ -307,6 +307,7 @@ dependencies = [
  "clap",
  "log",
  "rodecaster-usb",
+ "serde_json",
  "simplelog",
 ]
 

@@ -6,6 +6,7 @@ use crossbeam::atomic::AtomicCell;
 use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryRecvError};
 use hidapi::{DeviceInfo, HidApi};
 use log::{error, trace, warn};
+use crate::device::handle::DeviceHandle;
 use crate::device::model::DeviceModel;
 use crate::error::UsbError;
 
@@ -18,6 +19,12 @@ pub struct DeviceIdentifier {
     pub serial_number: String,
     pub version: u16,
     pub(crate) device_info: DeviceInfo
+}
+
+impl DeviceIdentifier {
+    pub fn open(&self, timeout: Duration) -> Result<DeviceHandle, UsbError> {
+        DeviceHandle::open(self.clone(), timeout)
+    }
 }
 
 impl PartialEq for DeviceIdentifier {
