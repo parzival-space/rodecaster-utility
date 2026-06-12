@@ -8,12 +8,13 @@ use simplelog::{ColorChoice, CombinedLogger, TermLogger, TerminalMode};
 use rodecaster_usb::manager::DeviceManager;
 use crate::commands::{Command, CommandContext, CommandHandler};
 use crate::commands::dump::DumpCommand;
+use crate::commands::list::ListCommand;
 
 #[derive(Debug, Parser)]
 #[command(about, version, long_about = None)]
 struct Arguments {
     /// The level of verbosity used for logging
-    #[clap(short, long, default_value_t = LevelFilter::Info)]
+    #[clap(short, long, default_value_t = LevelFilter::Error)]
     verbose: LevelFilter,
 
     /// The serial number of the device to connect to. Uses the first found device if not specified
@@ -41,6 +42,7 @@ fn main() {
     };
 
     match args.command {
-        Command::Dump => DumpCommand::execute(context)
+        Command::Dump => DumpCommand::execute(context),
+        Command::List => ListCommand::execute(context),
     }
 }
