@@ -1,11 +1,20 @@
 use std::time::Duration;
+use clap::Parser;
 use log::{error, info};
 use crate::commands::{CommandContext};
 
 pub struct DumpCommand {}
 
+#[derive(Debug, Parser)]
+#[command(about, version, long_about = None)]
+pub struct DumpCommandArguments {
+    /// Output file path to write the dump to.
+    #[clap(short, long)]
+    pub output: Option<String>
+}
+
 impl DumpCommand {
-    pub fn execute(context: CommandContext) {
+    pub fn execute(context: CommandContext, arguments: DumpCommandArguments) {
         context.device_manager.wait_for_first_enumeration(Duration::from_secs(1))
             .expect("Failed to wait for first enumeration");
 
@@ -27,6 +36,12 @@ impl DumpCommand {
         let state_snapshot = device_handle.state_snapshot();
         let state_json = serde_json::to_string_pretty(&state_snapshot)
             .expect("Failed to serialize device state");
-        println!("{}", state_json);
+
+        if let Some(output) = arguments.output {
+            std::fs::write(output, state_json)
+                .expect("Failed to write dump to file");
+        } else {
+            println!("{}", state_json);
+        }
     }
 }

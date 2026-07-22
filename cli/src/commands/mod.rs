@@ -1,6 +1,6 @@
 use clap::Subcommand;
 use rodecaster_usb::manager::DeviceManager;
-use crate::commands::dump::DumpCommand;
+use crate::commands::dump::{DumpCommand, DumpCommandArguments};
 use crate::commands::update_channel::UpdateChannelArguments;
 
 pub mod dump;
@@ -11,7 +11,7 @@ pub mod watch;
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Dumps the current internal state of the device
-    Dump,
+    Dump(DumpCommandArguments),
 
     /// List all connected supported RODECaster devices
     List,

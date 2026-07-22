@@ -44,7 +44,7 @@ fn main() {
     };
 
     match args.command {
-        Command::Dump => DumpCommand::execute(context),
+        Command::Dump(arguments) => DumpCommand::execute(context, arguments),
         Command::List => ListCommand::execute(context),
         Command::Watch => WatchCommand::execute(context),
         Command::UpdateChannel(arguments) => UpdateChannelCommand::execute(context, arguments),
