@@ -11,6 +11,7 @@ use crate::commands::dump::DumpCommand;
 use crate::commands::list::ListCommand;
 use crate::commands::watch::WatchCommand;
 use crate::commands::update_channel::UpdateChannelCommand;
+use crate::commands::update_screen_brightness::UpdateScreenBrightnessCommand;
 
 #[derive(Debug, Parser)]
 #[command(about, version, long_about = None)]
@@ -48,5 +49,6 @@ fn main() {
         Command::List => ListCommand::execute(context),
         Command::Watch => WatchCommand::execute(context),
         Command::UpdateChannel(arguments) => UpdateChannelCommand::execute(context, arguments),
+        Command::UpdateScreenBrightness(arguments) => UpdateScreenBrightnessCommand::execute(context, arguments),
     }
 }
