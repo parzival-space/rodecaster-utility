@@ -9,6 +9,7 @@ use rodecaster_usb::manager::DeviceManager;
 use crate::commands::{Command, CommandContext};
 use crate::commands::dump::DumpCommand;
 use crate::commands::list::ListCommand;
+use crate::commands::watch::WatchCommand;
 use crate::commands::update_channel::UpdateChannelCommand;
 
 #[derive(Debug, Parser)]
@@ -45,6 +46,7 @@ fn main() {
     match args.command {
         Command::Dump => DumpCommand::execute(context),
         Command::List => ListCommand::execute(context),
+        Command::Watch => WatchCommand::execute(context),
         Command::UpdateChannel(arguments) => UpdateChannelCommand::execute(context, arguments),
     }
 }

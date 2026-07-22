@@ -6,6 +6,7 @@ use crate::commands::update_channel::UpdateChannelArguments;
 pub mod dump;
 pub mod list;
 pub mod update_channel;
+pub mod watch;
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
@@ -14,6 +15,9 @@ pub enum Command {
 
     /// List all connected supported RODECaster devices
     List,
+
+    /// Watches device communication
+    Watch,
 
     /// Updates the state of a channel
     UpdateChannel(UpdateChannelArguments),
