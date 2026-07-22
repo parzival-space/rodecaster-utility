@@ -10,7 +10,9 @@ use crate::device::model::DeviceModel;
 use crate::device::state::run_state_loop;
 use crate::error::UsbError;
 use crate::manager::DeviceIdentifier;
+use crate::protocol::packets::property_patch_packet::PropertyPatchPacket;
 use crate::protocol::types::composite::Composite;
+use crate::protocol::types::value::Value;
 
 #[derive(Debug)]
 pub struct DeviceHandle {
@@ -112,5 +114,13 @@ impl DeviceHandle {
         } else {
             Composite::default()
         }
+    }
+
+    pub fn send_patch(&self, indices: Vec<usize>, name: String, value: Value) -> Result<(), UsbError> {
+        self.tx_sender.send(
+            IoTxEvent::SendPropertyPatch(
+                PropertyPatchPacket::new(indices, name, value)))
+            .unwrap_or_default();
+        Ok(())
     }
 }
