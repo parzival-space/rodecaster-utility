@@ -3,7 +3,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use crossbeam::atomic::AtomicCell;
 use crossbeam::channel::{Receiver, Sender, TryRecvError};
-use log::warn;
+use log::{trace, warn};
 use crate::device::io::IoRxEvent;
 use crate::error::UsbError;
 use crate::protocol::types::composite::Composite;
@@ -29,6 +29,7 @@ pub(crate) fn run_state_loop(
                 }
             },
             Ok(IoRxEvent::PropertyPatchReceived(patch)) => {
+                trace!("Received property patch: {:?}", patch);
                 if let Ok(mut state) = state.lock() {
                     if let Err(err) = state.apply_patch(
                         patch.get_indices().to_owned(),

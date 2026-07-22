@@ -1,6 +1,8 @@
 use std::io::Write;
+use byteorder::{WriteBytesExt, LE};
 use log::warn;
 use nom::bytes::streaming::tag;
+use nom::character::complete::usize;
 use nom::IResult;
 use nom::number::streaming::{le_u16, le_u8};
 use crate::protocol::Parseable;
@@ -16,6 +18,14 @@ pub(crate) struct PropertyPatchPacket {
 }
 
 impl PropertyPatchPacket {
+    pub fn new(indices: Vec<usize>, name: String, value: Value) -> Self {
+        Self {
+            indices,
+            name,
+            value
+        }
+    }
+
     pub fn get_indices(&self) -> &Vec<usize> {
         &self.indices
     }
@@ -75,6 +85,30 @@ impl Parseable for PropertyPatchPacket {
     }
 
     fn write_to<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        todo!()
+        writer.write_u8(PACKET_ID)?;
+
+        // length indicator, see parse method above
+        writer.write_u8(1u8)?;
+
+        writer.write_u8(self.indices.len() as u8)?;
+        for index in &self.indices {
+            match index {
+                index if *index == 0 => writer.write_u8(0)?,
+                index if *index <= usize::from(u8::MAX) => {
+                    writer.write_u8(1u8)?;
+                    writer.write_u8(*index as u8)?
+                },
+                index if *index <= usize::from(u16::MAX) => {
+                    writer.write_u8(2u8)?;
+                    writer.write_u16::<LE>(*index as u16)?
+                },
+                _ => Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput, "invalid index length"
+                ))? // invalid index length
+            }
+        };
+
+        self.name.write_to(writer)?;
+        self.value.write_to(writer)
     }
 }

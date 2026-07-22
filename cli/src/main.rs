@@ -6,9 +6,15 @@ use clap::Parser;
 use log::LevelFilter;
 use simplelog::{ColorChoice, CombinedLogger, TermLogger, TerminalMode};
 use rodecaster_usb::manager::DeviceManager;
-use crate::commands::{Command, CommandContext, CommandHandler};
+use crate::commands::{Command, CommandContext};
 use crate::commands::dump::DumpCommand;
 use crate::commands::list::ListCommand;
+use crate::commands::watch::WatchCommand;
+use crate::commands::update_channel::UpdateChannelCommand;
+use crate::commands::update_screen_brightness::UpdateScreenBrightnessCommand;
+use crate::commands::update_selected_bank::UpdateSelectedBankCommand;
+use crate::commands::update_soundpad::UpdateSoundpadCommand;
+use crate::commands::simulate_sampler_button::SimulateSamplerButtonCommand;
 
 #[derive(Debug, Parser)]
 #[command(about, version, long_about = None)]
@@ -42,7 +48,13 @@ fn main() {
     };
 
     match args.command {
-        Command::Dump => DumpCommand::execute(context),
+        Command::Dump(arguments) => DumpCommand::execute(context, arguments),
         Command::List => ListCommand::execute(context),
+        Command::Watch => WatchCommand::execute(context),
+        Command::UpdateChannel(arguments) => UpdateChannelCommand::execute(context, arguments),
+        Command::UpdateScreenBrightness(arguments) => UpdateScreenBrightnessCommand::execute(context, arguments),
+        Command::UpdateSelectedBank(arguments) => UpdateSelectedBankCommand::execute(context, arguments),
+        Command::UpdateSoundpad(arguments) => UpdateSoundpadCommand::execute(context, arguments),
+        Command::SimulateSamplerButton(arguments) => SimulateSamplerButtonCommand::execute(context, arguments),
     }
 }
