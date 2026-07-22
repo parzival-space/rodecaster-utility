@@ -1,11 +1,11 @@
 use std::time::Duration;
 use log::{error, info};
-use crate::commands::{CommandContext, CommandHandler};
+use crate::commands::{CommandContext};
 
 pub struct DumpCommand {}
 
-impl CommandHandler for DumpCommand {
-    fn execute(context: CommandContext) {
+impl DumpCommand {
+    pub fn execute(context: CommandContext) {
         context.device_manager.wait_for_first_enumeration(Duration::from_secs(1))
             .expect("Failed to wait for first enumeration");
 

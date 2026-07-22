@@ -6,9 +6,10 @@ use clap::Parser;
 use log::LevelFilter;
 use simplelog::{ColorChoice, CombinedLogger, TermLogger, TerminalMode};
 use rodecaster_usb::manager::DeviceManager;
-use crate::commands::{Command, CommandContext, CommandHandler};
+use crate::commands::{Command, CommandContext};
 use crate::commands::dump::DumpCommand;
 use crate::commands::list::ListCommand;
+use crate::commands::update_channel::UpdateChannelCommand;
 
 #[derive(Debug, Parser)]
 #[command(about, version, long_about = None)]
@@ -44,5 +45,6 @@ fn main() {
     match args.command {
         Command::Dump => DumpCommand::execute(context),
         Command::List => ListCommand::execute(context),
+        Command::UpdateChannel(arguments) => UpdateChannelCommand::execute(context, arguments),
     }
 }

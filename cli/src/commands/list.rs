@@ -1,10 +1,10 @@
 use std::time::Duration;
-use crate::commands::{CommandContext, CommandHandler};
+use crate::commands::{CommandContext};
 
 pub struct ListCommand {}
 
-impl CommandHandler for ListCommand {
-    fn execute(context: CommandContext) {
+impl ListCommand {
+    pub fn execute(context: CommandContext) {
         context.device_manager.wait_for_first_enumeration(Duration::from_secs(1))
             .expect("Failed to wait for first enumeration");
 
