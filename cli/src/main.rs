@@ -13,6 +13,8 @@ use crate::commands::watch::WatchCommand;
 use crate::commands::update_channel::UpdateChannelCommand;
 use crate::commands::update_screen_brightness::UpdateScreenBrightnessCommand;
 use crate::commands::update_selected_bank::UpdateSelectedBankCommand;
+use crate::commands::update_soundpad::UpdateSoundpadCommand;
+use crate::commands::simulate_sampler_button::SimulateSamplerButtonCommand;
 
 #[derive(Debug, Parser)]
 #[command(about, version, long_about = None)]
@@ -52,5 +54,7 @@ fn main() {
         Command::UpdateChannel(arguments) => UpdateChannelCommand::execute(context, arguments),
         Command::UpdateScreenBrightness(arguments) => UpdateScreenBrightnessCommand::execute(context, arguments),
         Command::UpdateSelectedBank(arguments) => UpdateSelectedBankCommand::execute(context, arguments),
+        Command::UpdateSoundpad(arguments) => UpdateSoundpadCommand::execute(context, arguments),
+        Command::SimulateSamplerButton(arguments) => SimulateSamplerButtonCommand::execute(context, arguments),
     }
 }
