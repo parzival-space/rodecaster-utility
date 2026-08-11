@@ -1,0 +1,13 @@
+[package]
+name = "rodecaster-utility"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+slint = { version = "1.17.1", features = ["backend-winit-wayland", "backend-winit-x11"] }
+
+[build-dependencies]
+slint-build = "1.17.1"
