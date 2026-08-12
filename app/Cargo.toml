@@ -11,3 +11,4 @@ slint = { version = "1.17.1", features = ["backend-winit-wayland", "backend-wini
 
 [build-dependencies]
 slint-build = "1.17.1"
+lucide-slint = "1.31.0"

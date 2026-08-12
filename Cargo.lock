@@ -2840,6 +2840,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lucide-slint"
+version = "1.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eaa1018559ac85146b8d526684e944f62d5ecc5c795422f9799ba3388a05b01b"
+
+[[package]]
 name = "lyon_algorithms"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4213,6 +4219,7 @@ dependencies = [
 name = "rodecaster-utility"
 version = "0.1.0"
 dependencies = [
+ "lucide-slint",
  "slint",
  "slint-build",
 ]
