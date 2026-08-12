@@ -1,0 +1,6 @@
+This repository contains several parts under different licenses.
+
+- The **rodecaster-utility** (the GUI application) uses the [GNU GPLv3](app/LICENSE) license.
+- The **other application modules** use the [GNU GPLv2](usb/LICENSE) license.
+
+The exact license of each module is documented in the `LICENSE` file of the modules' respective directory.
