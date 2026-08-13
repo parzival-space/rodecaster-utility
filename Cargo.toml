@@ -5,7 +5,7 @@ members = ["app","cli","usb"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-license = "GPL-2 AND GPL-3"
+license = "GPL-2"
 authors = [
     "Malte Linke <me@parzival.space>"
 ]

@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 repository.workspace = true
-license = "GPL-2"
+license.workspace = true
 
 [dependencies]
 log.workspace = true
