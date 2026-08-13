@@ -1,0 +1,30 @@
+{
+  "productName": "space.parzival.rodecaster-utility",
+  "identifier": "space.parzival.rodecaster-utility",
+  "version": "0.1.0",
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173/",
+    "frontendDist": "./ui/dist"
+  },
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 600,
+        "resizable": true,
+        "title": "RODECaster Utility",
+        "width": 800
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "icon": []
+  },
+  "plugins": {}
+}
