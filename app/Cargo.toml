@@ -1,9 +1,16 @@
 [package]
 name = "rodecaster-utility"
+license = "GPL-3-only"
+
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+slint = { version = "1.17.1" }
+log.workspace = true
+simplelog.workspace = true
+
+[build-dependencies]
+slint-build = { version = "1.17.1" }

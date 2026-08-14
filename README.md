@@ -30,3 +30,7 @@ This shouldn't be necessary in the future once [this PR](https://github.com/alsa
 been merged.
 
 TODO: Update README
+
+### License
+
+The entire repository, except the
