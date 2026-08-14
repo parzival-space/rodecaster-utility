@@ -14,11 +14,11 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 600,
+        "width": 1200,
+        "height": 720,
         "resizable": true,
-        "title": "RODECaster Utility",
-        "width": 800
+        "decorations": false,
+        "title": "RODECaster Utility"
       }
     ]
   },
