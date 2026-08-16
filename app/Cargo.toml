@@ -8,9 +8,10 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
-slint = { version = "1.17.1" }
 log.workspace = true
 simplelog.workspace = true
-
-[build-dependencies]
-slint-build = { version = "1.17.1" }
+eframe = { version = "0.36.1", features = [
+    "default",
+    "accesskit",
+    "wayland"
+]}

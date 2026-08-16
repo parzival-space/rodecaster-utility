@@ -1,12 +1,14 @@
+use eframe::egui::ViewportBuilder;
+use eframe::NativeOptions;
 use log::{LevelFilter, SetLoggerError};
 use simplelog::{Config, TermLogger};
-use slint::PlatformError;
+use crate::ui::app::App;
 
-slint::include_modules!();
+mod ui;
 
 #[derive(Debug)]
 enum RodeCasterUtilityError {
-    PlatformError(PlatformError),
+    EframeError(eframe::Error),
     SetLoggerError(SetLoggerError)
 }
 
@@ -14,8 +16,17 @@ fn main() -> Result<(), RodeCasterUtilityError> {
     TermLogger::init(LevelFilter::Debug, Default::default(), Default::default(), Default::default())
         .map_err(|err| RodeCasterUtilityError::SetLoggerError(err))?;
 
-    let main_window = MainWindow::new()
-        .map_err(|err| RodeCasterUtilityError::PlatformError(err))?;
-    main_window.run()
-        .map_err(|err| RodeCasterUtilityError::PlatformError(err))
+    let native_options = NativeOptions {
+        viewport: ViewportBuilder::default()
+            .with_decorations(true)
+            .with_min_inner_size([1200.0, 720.0])
+            .with_inner_size([1200.0, 720.0]),
+        ..Default::default()
+    };
+    eframe::run_native(
+        "RODECaster Utility",
+        native_options,
+        Box::new(|_cc| Ok(Box::<App>::default()))
+    )
+        .map_err(|err| RodeCasterUtilityError::EframeError(err))
 }
