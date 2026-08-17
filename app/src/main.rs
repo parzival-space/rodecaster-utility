@@ -1,5 +1,6 @@
 use eframe::egui::ViewportBuilder;
-use eframe::NativeOptions;
+use eframe::{NativeOptions, SurfaceConfig, WgpuConfiguration};
+use eframe::wgpu::PresentMode;
 use log::{LevelFilter, SetLoggerError};
 use simplelog::{Config, TermLogger};
 use crate::ui::app::App;
@@ -21,6 +22,14 @@ fn main() -> Result<(), RodeCasterUtilityError> {
             .with_decorations(true)
             .with_min_inner_size([1200.0, 720.0])
             .with_inner_size([1200.0, 720.0]),
+        wgpu_options: WgpuConfiguration {
+            surface: SurfaceConfig {
+                present_mode: PresentMode::AutoVsync,
+                desired_maximum_frame_latency: None,
+            },
+            ..Default::default()
+        },
+
         ..Default::default()
     };
     eframe::run_native(

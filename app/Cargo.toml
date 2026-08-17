@@ -11,7 +11,7 @@ repository.workspace = true
 log.workspace = true
 simplelog.workspace = true
 eframe = { version = "0.36.1", features = [
-    "default",
     "accesskit",
-    "wayland"
+    "x11",
+    "default_fonts"
 ]}
