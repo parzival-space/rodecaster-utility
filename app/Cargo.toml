@@ -1,7 +1,6 @@
 [package]
 name = "rodecaster-utility"
-license = "GPL-3-only"
-
+license.workspace = true
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
