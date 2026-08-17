@@ -10,8 +10,7 @@ repository.workspace = true
 [dependencies]
 log.workspace = true
 simplelog.workspace = true
-eframe = { version = "0.36.1", features = [
-    "accesskit",
-    "x11",
-    "default_fonts"
+vizia = { version = "0.4.0", features = [
+    "wayland",
+    "accesskit"
 ]}
