@@ -9,6 +9,7 @@ repository.workspace = true
 [dependencies]
 log.workspace = true
 simplelog.workspace = true
+crossbeam.workspace = true
 vizia = { version = "0.4.0", features = [
     "wayland",
     "accesskit"

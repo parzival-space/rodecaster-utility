@@ -2507,6 +2507,7 @@ dependencies = [
 name = "rodecaster-utility"
 version = "0.1.0"
 dependencies = [
+ "crossbeam",
  "log",
  "simplelog",
  "vizia",
