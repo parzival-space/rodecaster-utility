@@ -1,2 +1,2 @@
 pub mod app;
-mod state;
+mod device_state;
