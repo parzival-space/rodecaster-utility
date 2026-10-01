@@ -1,12 +1,14 @@
 mod ui;
 mod worker;
+mod devices;
 
 use std::thread;
 use crossbeam::channel::bounded;
 use log::{LevelFilter, SetLoggerError};
 use simplelog::TermLogger;
 use vizia::ApplicationError;
-use crate::ui::app::Application;
+use crate::devices::manager::DeviceManager;
+use crate::ui::app::App;
 use crate::worker::worker::Worker;
 
 #[derive(Debug)]
@@ -20,14 +22,13 @@ fn main() -> Result<(), AppError> {
         .map_err(|err| AppError::SetLoggerError(err))?;
 
     // message bus for gui
-    let (worker_command_tx, worker_command_rx) = bounded(100);
-    let (worker_event_tx, worker_event_rx) = bounded(100);
-    thread::spawn(move || {
-        let mut worker = Worker::new(worker_command_rx, worker_event_tx);
-        worker.run();
-    });
+    let (device_event_sender, device_event_receiver) = bounded(100);
 
-    let mut application = Application::new(worker_command_tx, worker_event_rx);
-    application.run()
+    let device_manager = DeviceManager::new(device_event_sender);
+    device_manager.run_new_thread();
+
+    App {
+        device_event_receiver
+    }.run()
         .map_err(|err| AppError::ApplicationError(err))
 }
