@@ -9,7 +9,7 @@ pub struct DeviceList {
 }
 
 impl DeviceList {
-    pub fn new(cx: &mut Context) -> Handle<Self> {
+    pub fn new(cx: &mut Context) -> Handle<'_, Self> {
         let selected_device: Signal<Option<String>> = Default::default();
         let device_list: SyncSignal<Vec<String>> = Default::default();
 
