@@ -13,12 +13,8 @@ enum ApplicationError {
 #[tokio::main]
 async fn main() -> Result<(), ApplicationError> {
     env_logger::init();
-
-    // init background tasks
-
-    // create application
+    
     Application::new(move |cx| {
-
         MainView::new(cx);
     })
         .title("RODECaster Utility")
