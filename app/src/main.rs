@@ -1,18 +1,28 @@
-use crate::ui::app::RodecasterUtility;
-use thiserror::Error;
-
 mod ui;
 
+use thiserror::Error;
+use vizia::prelude::{Application, WindowModifiers};
+use crate::ui::app::{MainView};
+
 #[derive(Error, Debug)]
-enum MainError {
+enum ApplicationError {
     #[error("Vizia application error: {0}")]
-    ApplicationError(#[from] vizia::prelude::ApplicationError)
+    ViziaApplicationError(#[from] vizia::prelude::ApplicationError)
 }
 
-fn main() -> Result<(), MainError> {
+#[tokio::main]
+async fn main() -> Result<(), ApplicationError> {
     env_logger::init();
 
-    let mut ui = RodecasterUtility::new();
-    ui.run()
-        .map_err(|err| MainError::from(err))
+    // init background tasks
+
+    // create application
+    Application::new(move |cx| {
+
+        MainView::new(cx);
+    })
+        .title("RODECaster Utility")
+        .run()?;
+
+    Ok(())
 }
