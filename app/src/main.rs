@@ -2,7 +2,7 @@ mod ui;
 
 use thiserror::Error;
 use vizia::prelude::{Application, WindowModifiers};
-use crate::ui::app::{MainView};
+use crate::ui::main_view::{MainView};
 
 #[derive(Error, Debug)]
 enum ApplicationError {

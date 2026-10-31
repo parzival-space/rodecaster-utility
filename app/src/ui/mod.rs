@@ -1,2 +1,2 @@
-pub mod app;
+pub mod main_view;
 mod views;
