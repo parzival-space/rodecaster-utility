@@ -11,6 +11,7 @@ vizia = { version = "0.4.0" }
 
 # async framework
 tokio = { version = "1.53.3", features = ["macros", "rt", "rt-multi-thread", "sync", "signal", "time"] }
+tokio-util = { version = "0.7.20" }
 
 # logging
 thiserror.workspace = true
