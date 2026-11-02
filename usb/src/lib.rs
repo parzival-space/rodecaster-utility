@@ -3,4 +3,5 @@ mod transport;
 pub mod protocol;
 pub mod device;
 pub mod manager;
+pub mod hotplug;
 
