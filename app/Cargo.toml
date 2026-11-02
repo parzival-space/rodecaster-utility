@@ -1,0 +1,22 @@
+[package]
+name = "rodecaster-utility"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vizia = { version = "0.4.0" }
+
+# async framework
+tokio = { version = "1.53.3", features = ["macros", "rt", "rt-multi-thread", "sync", "signal", "time"] }
+tokio-util = { version = "0.7.20" }
+
+# logging
+thiserror.workspace = true
+env_logger = "0.11.11"
+log = "0.4.33"
+
+# todo: move this back into the usb crate, this is just until I have re-implemented the usb loop stuff
+hidapi = "2.6.7"
