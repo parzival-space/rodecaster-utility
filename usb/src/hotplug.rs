@@ -28,6 +28,9 @@ pub enum HidHotPlugThreadManagement {
     Quit
 }
 
+/// Spawns an OS thread and watches for HID device hot-plug events.
+/// Use `watch_hid_hotplug_event(sender, receiver)` if you want to use an async task.
+/// Runs until `receiver` receives `HidHotPlugThreadManagement::Quit`.
 pub fn spawn_hotplug_handler(
     sender: Sender<HidHotPlugEvent>,
     receiver: Receiver<HidHotPlugThreadManagement>,
@@ -38,6 +41,7 @@ pub fn spawn_hotplug_handler(
 
 /// Watch for HID hotplug events and send them to the `sender` using async task.
 /// Can be used in whatever async runtime you want to use.
+/// Runs until `receiver` receives `HidHotPlugThreadManagement::Quit`.
 pub async fn watch_hid_hotplug_event(
     sender: Sender<HidHotPlugEvent>,
     receiver: Receiver<HidHotPlugThreadManagement>,
@@ -67,6 +71,7 @@ pub async fn watch_hid_hotplug_event(
                 match hidapi.refresh_devices() {
                     Err(err) => error!("Failed to refresh devices: {}", err),
                     Ok(_) => {
+                        // todo: implement actual hot-plug detection
                         let devices = hidapi.device_list()
                             .map(|device| {
                                 device.product_string().unwrap_or("Unknown").to_string()

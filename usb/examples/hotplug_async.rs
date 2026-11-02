@@ -18,8 +18,8 @@ async fn main() {
     info!("Listening for hotplug events for 10 seconds...");
     loop {
         select! {
-            Ok(message) = hotplug_rx.recv_async() => {
-                // todo: implement
+            Ok(event) = hotplug_rx.recv_async() => {
+                info!("Hotplug event: {:?}", event);
             },
             _ = sleep(Duration::from_secs(10)) => {
                 break;
