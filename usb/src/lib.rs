@@ -5,3 +5,4 @@ pub mod device;
 pub mod manager;
 pub mod hotplug;
 
+pub use flume;

@@ -2700,8 +2700,8 @@ name = "rodecaster-utility"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "hidapi",
  "log",
+ "rodecaster-usb",
  "thiserror 2.0.20",
  "tokio",
  "tokio-util",
