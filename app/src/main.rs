@@ -1,8 +1,9 @@
-mod ui;
+mod views;
+mod components;
 
 use thiserror::Error;
 use vizia::prelude::{Application, WindowModifiers};
-use crate::ui::main_view::{MainView};
+use crate::views::main_view::MainView;
 
 #[derive(Error, Debug)]
 enum ApplicationError {
