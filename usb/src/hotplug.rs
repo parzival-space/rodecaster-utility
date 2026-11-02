@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -5,7 +6,7 @@ use flume::{Receiver, Sender};
 use futures::{select, FutureExt};
 use futures::executor::block_on;
 use futures_timer::Delay;
-use hidapi::{HidApi};
+use hidapi::{DeviceInfo, HidApi};
 use log::{debug, error, info};
 
 pub(crate) const VID_RODE: u16 = 0x19f7;
@@ -16,16 +17,52 @@ pub(crate) const PID_RODECASTER_PRO_II: &[u16] = &[
     0x0094, 0x0092
 ];
 
+#[derive(Debug, Default, Copy, Clone)]
+pub enum DeviceType {
+    #[default]
+    RodecasterProII,
+    Unknown
+}
+
 #[derive(Debug, Clone)]
 pub enum HidHotPlugEvent {
-    DeviceAttached,
-    DeviceRemoved,
+    DeviceAttached(String, DeviceType),
+    DeviceRemoved(String, DeviceType),
     ThreadStopped
 }
 
 #[derive(Debug, Clone)]
 pub enum HidHotPlugThreadManagement {
     Quit
+}
+
+// used to store device information internally
+#[derive(Debug, Clone)]
+struct KnownDevice {
+    location: String,
+    device_type: DeviceType
+}
+
+impl TryFrom<DeviceInfo> for KnownDevice {
+    // todo: introduce proper error type for TryFrom mapping
+    type Error = ();
+
+    fn try_from(device_info: DeviceInfo) -> Result<Self, Self::Error> {
+        if device_info.vendor_id() != VID_RODE {
+            // wrong vendor id
+            return Err(());
+        };
+
+        match device_info.product_id() {
+            pro_ii if PID_RODECASTER_PRO_II.contains(&pro_ii) => {
+                Ok(KnownDevice {
+                    location: device_info.path().to_str().unwrap_or_default().to_string(),
+                    device_type: DeviceType::RodecasterProII
+                })
+            },
+            _ => Err(())
+        }
+    }
 }
 
 /// Spawns an OS thread and watches for HID device hot-plug events.
@@ -55,12 +92,16 @@ pub async fn watch_hid_hotplug_event(
         }
     };
 
+    // store known devices
+    let mut known_devices: HashMap<String, KnownDevice> = HashMap::new();
+
     loop {
         select! {
             control_event = receiver.recv_async() => match control_event {
                 Ok(HidHotPlugThreadManagement::Quit) => break,
                 Err(_) => {
                     error!("Receiver has been closed, terminating hot plug watcher");
+                    let _ = sender.send_async(HidHotPlugEvent::ThreadStopped).await;
                     break;
                 }
             },
@@ -71,13 +112,31 @@ pub async fn watch_hid_hotplug_event(
                 match hidapi.refresh_devices() {
                     Err(err) => error!("Failed to refresh devices: {}", err),
                     Ok(_) => {
-                        // todo: implement actual hot-plug detection
-                        let devices = hidapi.device_list()
-                            .map(|device| {
-                                device.product_string().unwrap_or("Unknown").to_string()
+                        // get all currently connected known devices
+                        let connected_devices: HashMap<String, KnownDevice> = hidapi.device_list()
+                            .filter_map(|device| {
+                                match KnownDevice::try_from(device.to_owned()) {
+                                    Ok(device) => Some((device.location.clone(), device)),
+                                    Err(_) => None
+                                }
                             })
-                            .collect::<Vec<String>>();
-                        info!("Refreshed devices: {:?}", devices);
+                            .collect();
+
+                        let removed_locations: Vec<_> = known_devices.keys()
+                            .filter(|location| !connected_devices.contains_key(*location))
+                            .cloned().collect();
+                        for location in removed_locations {
+                            if let Some(device) = known_devices.remove(&location.clone()) {
+                                let _ = sender.send_async(HidHotPlugEvent::DeviceRemoved(location, device.device_type)).await;
+                            }
+                        }
+
+                        // raise connected event for each device that is newly connected
+                        for (location, device) in connected_devices {
+                            if let None = known_devices.insert(location.clone(), device.clone()) {
+                                let _ = sender.send_async(HidHotPlugEvent::DeviceAttached(location.clone(), device.device_type.clone())).await;
+                            }
+                        }
                     },
                 }
             }
