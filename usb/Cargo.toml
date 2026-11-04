@@ -13,9 +13,25 @@ thiserror.workspace = true
 
 hidapi.workspace = true
 byteorder.workspace = true
-crossbeam.workspace = true
 nom.workspace = true
+
+# todo: replace with flume
+crossbeam.workspace = true
+flume = { version = "0.12.0" }
+
+futures = { version = "0.3.34" }
+futures-timer = { version = "3.0.4" }
 
 # todo: remove serde and serde_json as they are currently only used in a test
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+
+[dev-dependencies]
+env_logger = { version = "0.11.11" }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time"] }
+
+[[example]]
+name = "hotplug_async"
+
+[[example]]
+name = "hotplug"
