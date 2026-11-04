@@ -1,5 +1,6 @@
 mod state;
 
+use env_logger::{Builder, Env};
 use tokio_util::sync::CancellationToken;
 use vizia::{include_style, ApplicationError};
 use vizia::prelude::{Application, Label, List, SignalMap, WindowModifiers};
@@ -7,7 +8,7 @@ use crate::state::hotplug::HotplugState;
 
 #[tokio::main]
 async fn main() -> Result<(), ApplicationError> {
-    env_logger::init();
+    Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // some tasks need to be canceled when the application exits, so we allocate a cancellation token
     // in the future this shouldn't be necessary anymore as vizia will handle this for us using tasks
