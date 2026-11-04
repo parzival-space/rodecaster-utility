@@ -17,7 +17,7 @@ pub(crate) const PID_RODECASTER_PRO_II: &[u16] = &[
     0x0094, 0x0092
 ];
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub enum DeviceType {
     #[default]
     RodecasterProII,
