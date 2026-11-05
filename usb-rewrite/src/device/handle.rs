@@ -6,3 +6,9 @@ pub trait RodeCasterDeviceHandle: RodeCasterDeviceInfo + RefUnwindSafe + Sync + 
     // todo: handle message
     // todo: store state
 }
+
+pub(crate) trait RodeCasterDeviceHandleTransport {
+    // todo: spawn io thread
+
+    // async fn receive()
+}

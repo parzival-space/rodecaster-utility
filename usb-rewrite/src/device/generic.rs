@@ -1,7 +1,11 @@
+use crate::device::common::{RodeCasterDeviceInfo, RodeCasterDeviceInternal, RodeCasterDeviceKind};
+use crate::device::handle::RodeCasterDeviceHandle;
+use hidapi::{DeviceInfo, HidDevice, HidError};
 use std::marker::PhantomData;
 use std::panic::RefUnwindSafe;
-use crate::device::common::{RodeCasterDeviceInfo, RodeCasterDeviceKind};
+use std::sync::Arc;
 
+/// A generic device implementation for a RodeCaster protocol compatible device.
 #[derive(Debug)]
 pub(crate) struct RodeCasterDevice<K: RodeCasterDeviceKind> {
     pid: u16,
@@ -26,3 +30,11 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInfo for RodeCaste
         self.firmware_version.clone()
     }
 }
+
+impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInternal for RodeCasterDevice<K> {
+    async fn connect(device: DeviceInfo) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
+        todo!()
+    }
+}
+
+impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceHandle for RodeCasterDevice<K> {}

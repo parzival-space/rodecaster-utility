@@ -2,11 +2,9 @@ pub(crate) mod common;
 mod generic;
 pub mod handle;
 
-use std::ffi::CString;
-use std::io::Error;
 use std::sync::Arc;
-use hidapi::{HidApi, HidError};
-use crate::device::common::RodeCasterDeviceKind;
+use hidapi::{DeviceInfo, HidError};
+use crate::device::common::{RodeCasterDeviceInternal, RodeCasterDeviceKind};
 use crate::device::generic::RodeCasterDevice;
 use crate::device::handle::RodeCasterDeviceHandle;
 
@@ -32,14 +30,10 @@ impl RodeCasterDeviceKind for RodeCasterProIIKind {
 }
 
 /// Opens a RodeCaster device
-pub async fn open_device(path: CString) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
-    let hid_api = HidApi::new()?;
-    let handle = hid_api.open_path(&path)?;
-
-    match handle.get_device_info()?.product_id() {
+pub async fn open_device(device_info: DeviceInfo) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
+    match device_info.product_id() {
         pid if RodeCasterProIIKind::PID.contains(&pid) => {
-            // RodeCasterProII::connect(handle);
-            todo!("Handle connect device")
+            RodeCasterProII::connect(device_info).await
         },
         _ => todo!("Handle unsupported device error")
     }

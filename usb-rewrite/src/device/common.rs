@@ -1,3 +1,6 @@
+use std::sync::Arc;
+use hidapi::{DeviceInfo, HidError};
+use crate::device::handle::RodeCasterDeviceHandle;
 use crate::device::RodeCasterDeviceType;
 
 /// Representation of a RodeCaster device
@@ -10,4 +13,10 @@ pub trait RodeCasterDeviceInfo {
     fn get_product_id(&self) -> u16;
     fn get_serial(&self) -> String;
     fn get_version(&self) -> String;
+}
+
+pub(crate) trait RodeCasterDeviceInternal {
+    async fn connect(
+        handle: DeviceInfo
+    ) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError>;
 }
