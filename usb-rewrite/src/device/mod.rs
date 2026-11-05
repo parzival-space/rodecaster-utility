@@ -4,6 +4,7 @@ pub mod handle;
 
 use std::sync::Arc;
 use hidapi::{DeviceInfo, HidError};
+use crate::common::DeviceIdentifier;
 use crate::device::common::{RodeCasterDeviceInternal, RodeCasterDeviceKind};
 use crate::device::generic::RodeCasterDevice;
 use crate::device::handle::RodeCasterDeviceHandle;
@@ -30,10 +31,10 @@ impl RodeCasterDeviceKind for RodeCasterProIIKind {
 }
 
 /// Opens a RodeCaster device
-pub async fn open_device(device_info: DeviceInfo) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
-    match device_info.product_id() {
+pub async fn open_device(identifier: DeviceIdentifier) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
+    match identifier.device_info.product_id() {
         pid if RodeCasterProIIKind::PID.contains(&pid) => {
-            RodeCasterProII::connect(device_info).await
+            RodeCasterProII::connect(identifier.device_info).await
         },
         _ => todo!("Handle unsupported device error")
     }

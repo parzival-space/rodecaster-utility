@@ -2705,6 +2705,7 @@ dependencies = [
  "futures-timer",
  "hidapi",
  "log",
+ "thiserror 2.0.21",
  "tokio",
 ]
 
