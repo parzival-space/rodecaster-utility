@@ -5,6 +5,7 @@ use crate::device::RodeCasterDeviceType;
 
 /// Representation of a RodeCaster device
 pub trait RodeCasterDeviceKind: Send + Sync + 'static {
+    const VID: &[u16] = &[0x19f7]; // Vendor ID of RODE
     const PID: &[u16];
     const TYPE: RodeCasterDeviceType;
 }

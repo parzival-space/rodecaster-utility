@@ -13,8 +13,6 @@ use log::{debug, error};
 use crate::common::DeviceIdentifier;
 use crate::device::{RodeCasterDeviceType, RodeCasterProIIKind};
 
-pub(crate) const VID_RODE: u16 = 0x19f7;
-
 #[derive(Debug, Clone)]
 pub enum HidHotPlugEvent {
     DeviceAttached(DeviceIdentifier, RodeCasterDeviceType),
@@ -30,12 +28,8 @@ pub enum HidHotPlugThreadManagement {
 type KnownDeviceMap = HashMap<CString, (RodeCasterDeviceType, DeviceIdentifier)>;
 
 fn identify_device(device_info: &DeviceInfo) -> Option<RodeCasterDeviceType> {
-    if device_info.vendor_id() != VID_RODE {
-        return None;
-    }
-
     match device_info.product_id() {
-        pid if RodeCasterProIIKind::PID.contains(&pid) => Some(RodeCasterProIIKind::TYPE),
+        pid if RodeCasterProIIKind::PID.contains(&pid) && RodeCasterProIIKind::VID.contains(&device_info.vendor_id()) => Some(RodeCasterProIIKind::TYPE),
         _ => None
     }
 }
