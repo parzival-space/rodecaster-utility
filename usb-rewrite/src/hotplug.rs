@@ -1,3 +1,4 @@
+use crate::device::common::RodeCasterDeviceKind;
 use std::collections::HashMap;
 use std::thread;
 use std::thread::JoinHandle;
@@ -7,27 +8,15 @@ use futures::{select, FutureExt};
 use futures::executor::block_on;
 use futures_timer::Delay;
 use hidapi::{DeviceInfo, HidApi};
-use log::{debug, error, info};
+use log::{debug, error};
+use crate::device::{RodeCasterDeviceType, RodeCasterProIIKind};
 
 pub(crate) const VID_RODE: u16 = 0x19f7;
-pub(crate) const PID_RODECASTER_PRO_II: &[u16] = &[
-    // firmware 1.6.4
-    0x0037, 0x0072, 0x0078, 0x0030,
-    // firmware 1.7.3
-    0x0094, 0x0092
-];
-
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
-pub enum DeviceType {
-    #[default]
-    RodecasterProII,
-    Unknown
-}
 
 #[derive(Debug, Clone)]
 pub enum HidHotPlugEvent {
-    DeviceAttached(String, DeviceType),
-    DeviceRemoved(String, DeviceType),
+    DeviceAttached(String, RodeCasterDeviceType),
+    DeviceRemoved(String, RodeCasterDeviceType),
     ThreadStopped
 }
 
@@ -40,7 +29,7 @@ pub enum HidHotPlugThreadManagement {
 #[derive(Debug, Clone)]
 struct KnownDevice {
     location: String,
-    device_type: DeviceType
+    device_type: RodeCasterDeviceType
 }
 
 impl TryFrom<DeviceInfo> for KnownDevice {
@@ -54,10 +43,10 @@ impl TryFrom<DeviceInfo> for KnownDevice {
         };
 
         match device_info.product_id() {
-            pro_ii if PID_RODECASTER_PRO_II.contains(&pro_ii) => {
+            pro_ii if RodeCasterProIIKind::PID.contains(&pro_ii) => {
                 Ok(KnownDevice {
                     location: device_info.path().to_str().unwrap_or_default().to_string(),
-                    device_type: DeviceType::RodecasterProII
+                    device_type: RodeCasterProIIKind::TYPE
                 })
             },
             _ => Err(())
