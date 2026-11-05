@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["app","cli","usb"]
+members = ["app","cli","usb", "usb-rewrite"]
 
 [workspace.package]
 version = "0.1.0"

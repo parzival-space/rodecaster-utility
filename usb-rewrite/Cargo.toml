@@ -1,0 +1,25 @@
+[package]
+name = "rodecaster-usb-rewrite"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+log = "0.4.35"
+hidapi = "2.6.7"
+flume = "0.12.0"
+futures = "0.3.34"
+futures-timer = "3.0.4"
+
+[dev-dependencies]
+# dependencies required for examples
+env_logger = { version = "0.11.11" }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time"] }
+
+[[example]]
+name = "hotplug_async"
+
+[[example]]
+name = "hotplug"
