@@ -121,7 +121,7 @@ pub(crate) trait RodeCasterDeviceHidTransport {
                 Ok(event) => match event {
                     RodeCasterTransportEvent::Message(buffer) => {
                         let tx_buffer: Vec<u8> = [
-                            &[0x03u8],          // send report id
+                            &[0x03],          // send report id
                             buffer.as_slice()   // remaining packet bytes
                         ].concat();
 
