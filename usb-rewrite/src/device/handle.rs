@@ -22,24 +22,27 @@ pub(crate) trait RodeCasterDeviceHandleTransport {
         let tx_device_info = device_info.clone();
 
         #[cfg(feature = "tokio")] {
-            if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            use tokio::runtime::Handle;
+            if let Ok(handle) = Handle::try_current() {
+                debug!("Starting IO background tasks");
                 handle.spawn_blocking(move || Self::run_rx_loop(rx_device_info, io_rx_sender));
                 handle.spawn_blocking(move || Self::run_tx_loop(tx_device_info, io_tx_receiver));
             }
-            return (io_rx_receiver, io_tx_sender);
         }
 
-        use std::thread;
-        debug!("Spawning IO background threads");
-        let thread_name = device_info.serial_number().unwrap_or(device_info.path().to_str().unwrap_or("unknown"));
-        thread::Builder::new()
-            .name(format!("{}-rx", thread_name))
-            .spawn(move || Self::run_rx_loop(rx_device_info, io_rx_sender))
-            .expect("Failed to spawn RX thread");
-        thread::Builder::new()
-            .name(format!("{}-tx", thread_name))
-            .spawn(move || Self::run_tx_loop(tx_device_info, io_tx_receiver))
-            .expect("Failed to spawn TX thread");
+        #[cfg(not(feature = "tokio"))] {
+            use std::thread;
+            debug!("Spawning IO background threads");
+            let thread_name = device_info.serial_number().unwrap_or(device_info.path().to_str().unwrap_or("unknown"));
+            thread::Builder::new()
+                .name(format!("{}-rx", thread_name))
+                .spawn(move || Self::run_rx_loop(rx_device_info, io_rx_sender))
+                .expect("Failed to spawn RX thread");
+            thread::Builder::new()
+                .name(format!("{}-tx", thread_name))
+                .spawn(move || Self::run_tx_loop(tx_device_info, io_tx_receiver))
+                .expect("Failed to spawn TX thread");
+        }
 
         (io_rx_receiver, io_tx_sender)
     }
