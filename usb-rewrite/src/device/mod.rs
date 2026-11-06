@@ -1,6 +1,7 @@
 pub(crate) mod common;
 mod generic;
 pub mod handle;
+mod transport;
 
 use std::sync::Arc;
 use hidapi::{DeviceInfo, HidError};
