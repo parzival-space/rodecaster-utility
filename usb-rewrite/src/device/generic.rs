@@ -40,16 +40,9 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInternal for RodeC
     async fn connect(device: DeviceInfo) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
         let cancel_handler = Arc::new(AtomicBool::new(false));
         let (io_rx_sender, io_rx_receiver) = flume::unbounded();
+        let (io_tx_sender, io_tx_receiver) = flume::unbounded();
 
-        // todo: init poll tasks, spawn background worker/thread
-        // todo: auto close threads
-
-        if let Ok(handle) = Handle::try_current() {
-            debug!("Starting IO background tasks");
-            let device_info_clone = device.clone();
-            let cancel_handler_clone = Arc::clone(&cancel_handler);
-            handle.spawn_blocking(move || Self::run_rx_handler(&device_info_clone, io_rx_sender, cancel_handler_clone));
-        }
+        Self::spawn_io_handler(device.clone(), io_rx_sender, io_tx_receiver, Arc::clone(&cancel_handler)).await;
 
         Ok(Arc::new(Box::new(RodeCasterDevice {
             pid: device.product_id(),
