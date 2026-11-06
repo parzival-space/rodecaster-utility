@@ -1,10 +1,7 @@
-use std::collections::binary_heap::Iter;
-use std::io::{BufRead, Read};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use flume::{Receiver, RecvTimeoutError, Sender};
-use futures::StreamExt;
 use hidapi::{DeviceInfo, HidApi};
 use log::{debug, error, warn};
 
@@ -14,7 +11,12 @@ pub(crate) enum RodeCasterTransportEvent {
 }
 
 pub(crate) trait RodeCasterDeviceHidTransport {
-    async fn spawn_io_handler(device_info: DeviceInfo, rx_sender: Sender<RodeCasterTransportEvent>, tx_receiver: Receiver<RodeCasterTransportEvent>, cancel: Arc<AtomicBool>) {
+    async fn spawn_io_handler(
+        device_info: DeviceInfo,
+        rx_sender: Sender<RodeCasterTransportEvent>,
+        tx_receiver: Receiver<RodeCasterTransportEvent>,
+        cancel: Arc<AtomicBool>
+    ) {
         let rx_info = device_info.clone();
         let rx_cancel = Arc::clone(&cancel);
         let tx_info = device_info.clone();
@@ -45,7 +47,11 @@ pub(crate) trait RodeCasterDeviceHidTransport {
     }
 
     // reads the device input and issues internal events that the protocol implementation can parse
-    fn run_rx_handler(device_info: &DeviceInfo, sender: Sender<RodeCasterTransportEvent>, canceled: Arc<AtomicBool>) {
+    fn run_rx_handler(
+        device_info: &DeviceInfo,
+        sender: Sender<RodeCasterTransportEvent>,
+        canceled: Arc<AtomicBool>
+    ) {
         let hid_api = match HidApi::new() {
             Ok(api) => api,
             Err(err) => {
@@ -87,7 +93,11 @@ pub(crate) trait RodeCasterDeviceHidTransport {
     }
 
     // listens for tx events and writes the parsed packet to the devices output stream
-    fn run_tx_handler(device_info: &DeviceInfo, receiver: Receiver<RodeCasterTransportEvent>, canceled: Arc<AtomicBool>) {
+    fn run_tx_handler(
+        device_info: &DeviceInfo,
+        receiver: Receiver<RodeCasterTransportEvent>,
+        canceled: Arc<AtomicBool>
+    ) {
         let hid_api = match HidApi::new() {
             Ok(api) => api,
             Err(err) => {
