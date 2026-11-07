@@ -73,7 +73,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                     let _ = sender.send(RodeCasterDeviceIOEvent::PacketReceived(packet));
                 }
                 Err(err) => match err {
-                    RodeCasterHidTransportError::TimeoutError => { /* packet send successfully */ },
+                    RodeCasterHidTransportError::TimeoutError => { /* do nothing */ }
                     err => {
                         warn!("Failed to read packet: {}", err);
                     }
@@ -116,7 +116,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                     }
                 },
                 Err(err) => match err {
-                    RecvTimeoutError::Timeout => { /* packet send successfully */ }
+                    RecvTimeoutError::Timeout => { /* do nothing */ }
                     RecvTimeoutError::Disconnected => {
                         trace!("API channel disconnected");
                         break;
