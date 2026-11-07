@@ -32,7 +32,7 @@ pub(crate) trait RodeCasterDeviceHidTransport {
                 return;
             }
         }
-        
+
         // try to find name in this order: product string > serial number > device path > "unknown"
         let device_name = device_info.product_string().unwrap_or(device_info.serial_number().unwrap_or(device_info.path().to_str().unwrap_or("unknown")));
 
@@ -70,8 +70,7 @@ pub(crate) trait RodeCasterDeviceHidTransport {
         };
 
         while !canceled.load(Ordering::Relaxed) {
-            let mut buffer = Vec::with_capacity(256);
-            buffer.resize_with(256, || 0x00);
+            let mut buffer = vec![0u8; 256];
             buffer[0] = 0x04; // receive report id
 
             match handle.read_timeout(&mut buffer, 100) {
