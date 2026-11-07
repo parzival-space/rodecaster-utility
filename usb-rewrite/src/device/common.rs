@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use hidapi::{DeviceInfo, HidError};
-use crate::device::handle::RodeCasterDeviceHandle;
 use crate::device::RodeCasterDeviceType;
+use crate::device::generic::RodeCasterDeviceHandle;
+use hidapi::{DeviceInfo, HidError};
+use std::sync::Arc;
 
 /// Representation of a RodeCaster device
 pub trait RodeCasterDeviceKind: Send + Sync + 'static {

@@ -1,14 +1,10 @@
 use crate::device::common::{RodeCasterDeviceInfo, RodeCasterDeviceInternal, RodeCasterDeviceKind};
-use crate::device::handle::{RodeCasterDeviceHandle};
-use hidapi::{DeviceInfo, HidApi, HidDevice, HidError};
+use crate::device::transport::RodeCasterDeviceIOHandler;
+use hidapi::{DeviceInfo, HidError};
 use std::marker::PhantomData;
 use std::panic::RefUnwindSafe;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use flume::{Receiver, Sender};
-use log::debug;
-use tokio::runtime::Handle;
-use crate::device::transport::RodeCasterDeviceHidTransport;
 
 /// A generic device implementation for a RodeCaster protocol compatible devices.
 #[derive(Debug)]
@@ -53,12 +49,14 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInternal for RodeC
         })))
     }
 }
-
-impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceHandle for RodeCasterDevice<K> {}
-impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceHidTransport for RodeCasterDevice<K> {}
+impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceIOHandler for RodeCasterDevice<K> {}
 
 impl<K: RodeCasterDeviceKind> Drop for RodeCasterDevice<K> {
     fn drop(&mut self) {
         self.cancel_handler.store(true, Ordering::Release);
     }
 }
+
+impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceHandle for RodeCasterDevice<K> {}
+
+pub trait RodeCasterDeviceHandle: RodeCasterDeviceInfo + RefUnwindSafe + Sync + Send {}

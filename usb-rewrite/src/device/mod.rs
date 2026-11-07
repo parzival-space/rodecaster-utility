@@ -3,12 +3,11 @@ mod generic;
 pub mod handle;
 mod transport;
 
-use std::sync::Arc;
-use hidapi::{DeviceInfo, HidError};
 use crate::common::DeviceIdentifier;
 use crate::device::common::{RodeCasterDeviceInternal, RodeCasterDeviceKind};
-use crate::device::generic::RodeCasterDevice;
-use crate::device::handle::RodeCasterDeviceHandle;
+use crate::device::generic::{RodeCasterDevice, RodeCasterDeviceHandle};
+use hidapi::HidError;
+use std::sync::Arc;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub enum RodeCasterDeviceType {

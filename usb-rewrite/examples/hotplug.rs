@@ -1,9 +1,9 @@
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 use env_logger::{Builder, Env};
 use flume::TryRecvError;
 use log::info;
-use rodecaster_usb_rewrite::hotplug::{spawn_hotplug_handler, HidHotPlugThreadManagement};
+use rodecaster_usb_rewrite::hotplug::{HidHotPlugThreadManagement, spawn_hotplug_handler};
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 fn main() {
     Builder::from_env(Env::default().default_filter_or("info")).init();

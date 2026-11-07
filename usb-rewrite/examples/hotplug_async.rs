@@ -1,9 +1,9 @@
-use std::time::Duration;
 use env_logger::{Builder, Env};
 use log::info;
-use tokio::{select, spawn};
+use rodecaster_usb_rewrite::hotplug::{HidHotPlugThreadManagement, watch_hid_hotplug_event};
+use std::time::Duration;
 use tokio::time::sleep;
-use rodecaster_usb_rewrite::hotplug::{watch_hid_hotplug_event, HidHotPlugThreadManagement};
+use tokio::{select, spawn};
 
 #[tokio::main]
 async fn main() {

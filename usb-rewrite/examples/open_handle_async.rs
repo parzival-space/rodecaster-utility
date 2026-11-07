@@ -1,13 +1,13 @@
+use env_logger::{Builder, Env};
+use log::{debug, info};
+use rodecaster_usb_rewrite::common::DeviceIdentifier;
+use rodecaster_usb_rewrite::device::open_device;
+use rodecaster_usb_rewrite::hotplug::{HidHotPlugEvent, HidHotPlugThreadManagement, watch_hid_hotplug_event};
 use std::collections::HashMap;
 use std::iter::Map;
 use std::time::Duration;
-use env_logger::{Builder, Env};
-use log::{debug, info};
-use tokio::{select, spawn};
 use tokio::time::sleep;
-use rodecaster_usb_rewrite::common::DeviceIdentifier;
-use rodecaster_usb_rewrite::device::open_device;
-use rodecaster_usb_rewrite::hotplug::{watch_hid_hotplug_event, HidHotPlugThreadManagement, HidHotPlugEvent};
+use tokio::{select, spawn};
 
 #[tokio::main]
 async fn main() {

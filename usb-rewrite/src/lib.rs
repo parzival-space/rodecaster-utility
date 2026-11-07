@@ -1,6 +1,7 @@
 pub mod hotplug;
 pub mod device;
 pub mod common;
+pub mod protocol;
 
 /// Generic error type for the entire library
 #[derive(Debug, thiserror::Error)]

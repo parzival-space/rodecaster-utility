@@ -1,6 +1,6 @@
+use hidapi::DeviceInfo;
 use std::ffi::CString;
 use std::fmt::Display;
-use hidapi::DeviceInfo;
 
 #[derive(Debug, Clone)]
 pub struct DeviceIdentifier {

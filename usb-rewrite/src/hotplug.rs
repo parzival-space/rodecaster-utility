@@ -1,17 +1,17 @@
+use crate::common::DeviceIdentifier;
 use crate::device::common::RodeCasterDeviceKind;
+use crate::device::{RodeCasterDeviceType, RodeCasterProIIKind};
+use flume::{Receiver, Sender};
+use futures::executor::block_on;
+use futures::{FutureExt, select};
+use futures_timer::Delay;
+use hidapi::{DeviceInfo, HidApi};
+use log::{debug, error};
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
-use flume::{Receiver, Sender};
-use futures::{select, FutureExt};
-use futures::executor::block_on;
-use futures_timer::Delay;
-use hidapi::{DeviceInfo, HidApi};
-use log::{debug, error};
-use crate::common::DeviceIdentifier;
-use crate::device::{RodeCasterDeviceType, RodeCasterProIIKind};
 
 #[derive(Debug, Clone)]
 pub enum HidHotPlugEvent {

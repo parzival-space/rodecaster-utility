@@ -1,20 +1,24 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
+use crate::RodeCasterError;
+use crate::device::common::RodeCasterDeviceKind;
+use crate::protocol::hid_transport::{RodeCasterHidTransport, RodeCasterHidTransportError};
 use flume::{Receiver, RecvTimeoutError, Sender};
 use hidapi::{DeviceInfo, HidApi, HidDevice, HidError, HidResult};
-use log::{debug, error, warn};
+use log::{debug, error, trace, warn};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
+use thiserror::Error;
 
-pub(crate) enum RodeCasterTransportEvent {
-    Message(Vec<u8>),
+pub(crate) enum RodeCasterDeviceIOEvent {
+    PacketReceived(Vec<u8>),
     ThreadQuit
 }
 
-pub(crate) trait RodeCasterDeviceHidTransport {
+pub(crate) trait RodeCasterDeviceIOHandler {
     async fn spawn_io_handler(
         device_info: DeviceInfo,
-        rx_sender: Sender<RodeCasterTransportEvent>,
-        tx_receiver: Receiver<RodeCasterTransportEvent>,
+        rx_sender: Sender<RodeCasterDeviceIOEvent>,
+        tx_receiver: Receiver<RodeCasterDeviceIOEvent>,
         cancel: Arc<AtomicBool>
     ) {
         let rx_info = device_info.clone();
@@ -48,39 +52,34 @@ pub(crate) trait RodeCasterDeviceHidTransport {
     // reads the device input and issues internal events that the protocol implementation can parse
     fn run_rx_handler(
         device_info: &DeviceInfo,
-        sender: Sender<RodeCasterTransportEvent>,
+        sender: Sender<RodeCasterDeviceIOEvent>,
         canceled: Arc<AtomicBool>
     ) {
-        let handle = match (|| {
-            let hid_api = HidApi::new()?;
-            device_info.open_device(&hid_api)
-        })() {
-            Ok(handle) => handle,
-            Err(err) => {
-                error!("Failed to acquire device handle for RX handler: {}", err);
-                let _ = sender.send(RodeCasterTransportEvent::ThreadQuit);
+        let transport = match RodeCasterHidTransport::new(
+            device_info.clone(),
+            0x03,
+            0x04
+        ) {
+            Ok(transport) => transport,
+            Err(e) => {
+                error!("Failed to create HID transport: {}", e);
                 return;
             }
         };
 
         while !canceled.load(Ordering::Relaxed) {
-            let mut buffer = vec![0u8; 256];
-            buffer[0] = 0x04; // receive report id
-
-            match handle.read_timeout(&mut buffer, 100) {
-                Ok(bytes_read) => match bytes_read{
-                    0 => { /* no message was sent to host */ }
-                    _ => {
-                        // todo: if start of message, read first 4 bytes as length
-                        // read until either end of frame or end of length.
-                        // if end of frame first, append to stored vec and continue with next message.
-                        // once read complete emit event.
-                        debug!("Message: {:?}", buffer);
-                        let _ = sender.send(RodeCasterTransportEvent::Message(buffer[1..].to_vec()));
+            match transport.read_timeout(Duration::from_millis(100)) {
+                Ok(packet) => {
+                    trace!("Received packet from HID device: {:?}", packet);
+                    let _ = sender.send(RodeCasterDeviceIOEvent::PacketReceived(packet));
+                }
+                Err(err) => match err {
+                    RodeCasterHidTransportError::TimeoutError => {
+                        // just a timeout error, nothing to do here
+                    },
+                    err => {
+                        warn!("Failed to read packet: {}", err);
                     }
-                },
-                Err(err) => {
-                    warn!("Error reading from device: {}", err);
                 }
             }
         }
@@ -90,53 +89,46 @@ pub(crate) trait RodeCasterDeviceHidTransport {
     // listens for tx events and writes the parsed packet to the devices output stream
     fn run_tx_handler(
         device_info: &DeviceInfo,
-        receiver: Receiver<RodeCasterTransportEvent>,
+        receiver: Receiver<RodeCasterDeviceIOEvent>,
         canceled: Arc<AtomicBool>
     ) {
-        let handle = match (|| {
-            let hid_api = HidApi::new()?;
-            device_info.open_device(&hid_api)
-        })() {
-            Ok(handle) => handle,
+        let transport = match RodeCasterHidTransport::new(
+            device_info.clone(),
+            0x03,
+            0x04
+        ) {
+            Ok(transport) => transport,
             Err(err) => {
-                error!("Failed to acquire device handle for TX handler: {}", err);
+                error!("Failed to create HID transport: {}", err);
                 return;
             }
         };
 
         while !canceled.load(Ordering::Relaxed) {
             match receiver.recv_timeout(Duration::from_millis(100)) {
-                Ok(event) => match event {
-                    RodeCasterTransportEvent::Message(buffer) => {
-                        let tx_buffer: Vec<u8> = [
-                            &[0x03],            // send report id
-                            buffer.as_slice()   // remaining packet bytes
-                        ].concat();
-
-                        // todo: handle framing
-                        match handle.write(tx_buffer.as_slice()) {
-                            Ok(_) => {},
-                            Err(err) => {
-                                warn!("Error writing to device: {}", err);
-                            }
+                Ok(api_event) => match api_event {
+                    RodeCasterDeviceIOEvent::PacketReceived(packet) => match transport.write_timeout(&packet, Duration::from_millis(100)) {
+                        Ok(_) => { /* packet send successfully */ }
+                        Err(e) => {
+                            warn!("Failed to write packet: {}", e);
+                            // todo: send io error event
                         }
+                    },
+                    _ => {
+                        // do nothing
                     }
-                    _ => {}
                 },
                 Err(err) => match err {
-                    RecvTimeoutError::Timeout => { /* do nothing */ },
                     RecvTimeoutError::Disconnected => {
-                        warn!("TX channel sender disconnected");
+                        trace!("API channel disconnected");
                         break;
+                    }
+                    RecvTimeoutError::Timeout => {
+                        // just a normal timeout, nothing to do here
                     }
                 }
             }
         }
         debug!("TX handler terminated");
     }
-}
-
-fn open_device(device_info: DeviceInfo) -> Result<HidDevice, HidError> {
-    let hid_api = HidApi::new()?;
-    device_info.open_device(&hid_api)
 }
