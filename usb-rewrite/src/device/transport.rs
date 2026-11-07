@@ -39,7 +39,7 @@ pub(crate) trait RodeCasterDeviceHidTransport {
             use std::thread::Builder;
             Builder::new()
                 .name(format!("{}-rx", device_name))
-                .spawn(move || Self::run_rx_handler(&rx_info, rx_sender, tx_cancel, cancel));
+                .spawn(move || Self::run_rx_handler(&rx_info, rx_sender, rx_cancel));
             Builder::new()
                 .name(format!("{}-tx", device_name))
                 .spawn(move || Self::run_tx_handler(&tx_info, tx_receiver, tx_cancel));
