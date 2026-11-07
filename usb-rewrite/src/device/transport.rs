@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use flume::{Receiver, RecvTimeoutError, Sender};
-use hidapi::{DeviceInfo, HidApi};
+use hidapi::{DeviceInfo, HidApi, HidDevice, HidError, HidResult};
 use log::{debug, error, warn};
 
 pub(crate) enum RodeCasterTransportEvent {
@@ -51,19 +51,13 @@ pub(crate) trait RodeCasterDeviceHidTransport {
         sender: Sender<RodeCasterTransportEvent>,
         canceled: Arc<AtomicBool>
     ) {
-        let hid_api = match HidApi::new() {
-            Ok(api) => api,
-            Err(err) => {
-                error!("Error creating HID API: {}", err);
-                let _ = sender.send(RodeCasterTransportEvent::ThreadQuit);
-                return;
-            }
-        };
-
-        let handle = match device_info.open_device(&hid_api) {
+        let handle = match (|| {
+            let hid_api = HidApi::new()?;
+            device_info.open_device(&hid_api)
+        })() {
             Ok(handle) => handle,
             Err(err) => {
-                error!("Error opening device: {}", err);
+                error!("Failed to acquire device handle for RX handler: {}", err);
                 let _ = sender.send(RodeCasterTransportEvent::ThreadQuit);
                 return;
             }
@@ -77,7 +71,10 @@ pub(crate) trait RodeCasterDeviceHidTransport {
                 Ok(bytes_read) => match bytes_read{
                     0 => { /* no message was sent to host */ }
                     _ => {
-                        // todo: handle framing
+                        // todo: if start of message, read first 4 bytes as length
+                        // read until either end of frame or end of length.
+                        // if end of frame first, append to stored vec and continue with next message.
+                        // once read complete emit event.
                         debug!("Message: {:?}", buffer);
                         let _ = sender.send(RodeCasterTransportEvent::Message(buffer[1..].to_vec()));
                     }
@@ -96,20 +93,13 @@ pub(crate) trait RodeCasterDeviceHidTransport {
         receiver: Receiver<RodeCasterTransportEvent>,
         canceled: Arc<AtomicBool>
     ) {
-        let hid_api = match HidApi::new() {
-            Ok(api) => api,
-            Err(err) => {
-                error!("Error creating HID API: {}", err);
-                // let _ = sender.send(RodeCasterTransportEvent::ThreadQuit);
-                return;
-            }
-        };
-
-        let handle = match device_info.open_device(&hid_api) {
+        let handle = match (|| {
+            let hid_api = HidApi::new()?;
+            device_info.open_device(&hid_api)
+        })() {
             Ok(handle) => handle,
             Err(err) => {
-                error!("Error opening device: {}", err);
-                // let _ = sender.send(RodeCasterTransportEvent::ThreadQuit);
+                error!("Failed to acquire device handle for TX handler: {}", err);
                 return;
             }
         };
@@ -119,7 +109,7 @@ pub(crate) trait RodeCasterDeviceHidTransport {
                 Ok(event) => match event {
                     RodeCasterTransportEvent::Message(buffer) => {
                         let tx_buffer: Vec<u8> = [
-                            &[0x03],          // send report id
+                            &[0x03],            // send report id
                             buffer.as_slice()   // remaining packet bytes
                         ].concat();
 
@@ -144,4 +134,9 @@ pub(crate) trait RodeCasterDeviceHidTransport {
         }
         debug!("TX handler terminated");
     }
+}
+
+fn open_device(device_info: DeviceInfo) -> Result<HidDevice, HidError> {
+    let hid_api = HidApi::new()?;
+    device_info.open_device(&hid_api)
 }
