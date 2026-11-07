@@ -22,7 +22,7 @@ pub(crate) struct RodeCasterHidTransport {
 }
 
 impl RodeCasterHidTransport {
-    const MAX_PAYLOAD_LEN: usize = 1024 * 1024 * 1024; // 1 MB
+    const MAX_PAYLOAD_LEN: usize = 256 * 1024; // 256 KB
     const FRAME_SIZE: usize = 256; // 1 report byte + 255 data bytes
 
     pub(crate) fn new(device_info: DeviceInfo, tx_report_id: u8, rx_report_id: u8) -> Result<Self, HidError> {
