@@ -1,6 +1,5 @@
 pub(crate) mod common;
 mod generic;
-pub mod handle;
 mod transport;
 
 use crate::common::DeviceIdentifier;
