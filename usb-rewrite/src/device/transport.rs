@@ -29,21 +29,20 @@ pub(crate) trait RodeCasterDeviceHidTransport {
                 debug!("Starting IO background tasks");
                 handle.spawn_blocking(move || Self::run_rx_handler(&rx_info, rx_sender, rx_cancel));
                 handle.spawn_blocking(move || Self::run_tx_handler(&tx_info, tx_receiver, tx_cancel));
+                return;
             }
         }
-        #[cfg(not(feature = "tokio"))]
-        {
-            // try to find name in this order: product string > serial number > device path > "unknown"
-            let device_name = device_info.product_string().unwrap_or(device_info.serial_number().unwrap_or(device_info.path().to_str().unwrap_or("unknown")));
+        
+        // try to find name in this order: product string > serial number > device path > "unknown"
+        let device_name = device_info.product_string().unwrap_or(device_info.serial_number().unwrap_or(device_info.path().to_str().unwrap_or("unknown")));
 
-            use std::thread::Builder;
-            Builder::new()
-                .name(format!("{}-rx", device_name))
-                .spawn(move || Self::run_rx_handler(&rx_info, rx_sender, rx_cancel));
-            Builder::new()
-                .name(format!("{}-tx", device_name))
-                .spawn(move || Self::run_tx_handler(&tx_info, tx_receiver, tx_cancel));
-        }
+        use std::thread::Builder;
+        let _ = Builder::new()
+            .name(format!("{}-rx", device_name))
+            .spawn(move || Self::run_rx_handler(&rx_info, rx_sender, rx_cancel));
+        let _ = Builder::new()
+            .name(format!("{}-tx", device_name))
+            .spawn(move || Self::run_tx_handler(&tx_info, tx_receiver, tx_cancel));
     }
 
     // reads the device input and issues internal events that the protocol implementation can parse
