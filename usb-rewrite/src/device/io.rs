@@ -5,6 +5,7 @@ use log::{debug, error, trace, warn};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+
 pub(crate) enum RodeCasterDeviceIOEvent {
     PacketReceived(Vec<u8>),
     ThreadQuit
@@ -34,7 +35,9 @@ pub(crate) trait RodeCasterDeviceIOHandler {
         }
 
         // try to find name in this order: product string > serial number > device path > "unknown"
-        let device_name = device_info.product_string().unwrap_or(device_info.serial_number().unwrap_or(device_info.path().to_str().unwrap_or("unknown")));
+        let device_name = device_info.product_string().unwrap_or(
+            device_info.serial_number().unwrap_or(
+                device_info.path().to_str().unwrap_or("rodecaster")));
 
         use std::thread::Builder;
         let _ = Builder::new()
@@ -70,9 +73,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                     let _ = sender.send(RodeCasterDeviceIOEvent::PacketReceived(packet));
                 }
                 Err(err) => match err {
-                    RodeCasterHidTransportError::TimeoutError => {
-                        // just a timeout error, nothing to do here
-                    },
+                    RodeCasterHidTransportError::TimeoutError => { /* packet send successfully */ },
                     err => {
                         warn!("Failed to read packet: {}", err);
                     }
@@ -115,12 +116,10 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                     }
                 },
                 Err(err) => match err {
+                    RecvTimeoutError::Timeout => { /* packet send successfully */ }
                     RecvTimeoutError::Disconnected => {
                         trace!("API channel disconnected");
                         break;
-                    }
-                    RecvTimeoutError::Timeout => {
-                        // just a normal timeout, nothing to do here
                     }
                 }
             }
