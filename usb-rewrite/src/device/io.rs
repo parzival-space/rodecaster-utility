@@ -1,14 +1,10 @@
-use crate::RodeCasterError;
-use crate::device::common::RodeCasterDeviceKind;
 use crate::protocol::hid_transport::{RodeCasterHidTransport, RodeCasterHidTransportError};
 use flume::{Receiver, RecvTimeoutError, Sender};
-use hidapi::{DeviceInfo, HidApi, HidDevice, HidError, HidResult};
+use hidapi::DeviceInfo;
 use log::{debug, error, trace, warn};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, Instant};
-use thiserror::Error;
-
+use std::time::Duration;
 pub(crate) enum RodeCasterDeviceIOEvent {
     PacketReceived(Vec<u8>),
     ThreadQuit
