@@ -31,8 +31,8 @@ pub(crate) trait RodeCasterDeviceIOHandler {
             use tokio::runtime::Handle;
             if let Ok(handle) = Handle::try_current() {
                 debug!("Starting IO background tasks");
-                handle.spawn_blocking(move || Self::run_rx_handler(&rx_info, rx_sender, rx_cancel));
-                handle.spawn_blocking(move || Self::run_tx_handler(&tx_info, tx_receiver, tx_cancel));
+                handle.spawn_blocking(move || Self::run_rx_handler(rx_info, rx_sender, rx_cancel));
+                handle.spawn_blocking(move || Self::run_tx_handler(tx_info, tx_receiver, tx_cancel));
                 return;
             }
         }
@@ -43,20 +43,20 @@ pub(crate) trait RodeCasterDeviceIOHandler {
         use std::thread::Builder;
         let _ = Builder::new()
             .name(format!("{}-rx", device_name))
-            .spawn(move || Self::run_rx_handler(&rx_info, rx_sender, rx_cancel));
+            .spawn(move || Self::run_rx_handler(rx_info, rx_sender, rx_cancel));
         let _ = Builder::new()
             .name(format!("{}-tx", device_name))
-            .spawn(move || Self::run_tx_handler(&tx_info, tx_receiver, tx_cancel));
+            .spawn(move || Self::run_tx_handler(tx_info, tx_receiver, tx_cancel));
     }
 
     // reads the device input and issues internal events that the protocol implementation can parse
     fn run_rx_handler(
-        device_info: &DeviceInfo,
+        device_info: DeviceInfo,
         sender: Sender<RodeCasterDeviceIOEvent>,
         canceled: Arc<AtomicBool>
     ) {
         let transport = match RodeCasterHidTransport::new(
-            device_info.clone(),
+            device_info,
             0x03,
             0x04
         ) {
@@ -88,12 +88,12 @@ pub(crate) trait RodeCasterDeviceIOHandler {
 
     // listens for tx events and writes the parsed packet to the devices output stream
     fn run_tx_handler(
-        device_info: &DeviceInfo,
+        device_info: DeviceInfo,
         receiver: Receiver<RodeCasterDeviceIOEvent>,
         canceled: Arc<AtomicBool>
     ) {
         let transport = match RodeCasterHidTransport::new(
-            device_info.clone(),
+            device_info,
             0x03,
             0x04
         ) {

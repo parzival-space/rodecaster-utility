@@ -1,5 +1,5 @@
 use crate::device::common::{RodeCasterDeviceInfo, RodeCasterDeviceInternal, RodeCasterDeviceKind};
-use crate::device::transport::RodeCasterDeviceIOHandler;
+use crate::device::io::RodeCasterDeviceIOHandler;
 use hidapi::{DeviceInfo, HidError};
 use std::marker::PhantomData;
 use std::panic::RefUnwindSafe;
