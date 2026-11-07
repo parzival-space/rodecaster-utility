@@ -14,6 +14,7 @@ pub(crate) enum RodeCasterHidTransportError {
     PayloadTooLargeError(usize),
 }
 
+#[derive(Debug)]
 pub(crate) struct RodeCasterHidTransport {
     handle: HidDevice,
 

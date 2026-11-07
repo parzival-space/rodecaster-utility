@@ -1,5 +1,5 @@
 use crate::protocol::hid_transport::{RodeCasterHidTransport, RodeCasterHidTransportError};
-use flume::{Receiver, RecvTimeoutError, Sender};
+use flume::{Receiver, RecvTimeoutError, Sender, TryRecvError};
 use hidapi::DeviceInfo;
 use log::{debug, error, trace, warn};
 use std::sync::Arc;
@@ -7,29 +7,40 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 pub(crate) enum RodeCasterDeviceIOEvent {
+    /// a raw packet was received from the device.
+    /// the packet will only contain the payload bytes without the 4 byte length prefix.
     PacketReceived(Vec<u8>),
-    ThreadQuit
+
+    TXError(RodeCasterHidTransportError),
+    RXError(RodeCasterHidTransportError),
+}
+
+pub(crate) enum RodeCasterDeviceIOCommand {
+    /// sends a raw packet payload to the device.
+    /// the packet will be prefixed with a 4 byte length prefix.
+    SendPacket(Vec<u8>),
 }
 
 pub(crate) trait RodeCasterDeviceIOHandler {
     async fn spawn_io_handler(
         device_info: DeviceInfo,
-        rx_sender: Sender<RodeCasterDeviceIOEvent>,
-        tx_receiver: Receiver<RodeCasterDeviceIOEvent>,
+        event_sender: Sender<RodeCasterDeviceIOEvent>,
+        command_receiver: Receiver<RodeCasterDeviceIOCommand>,
         cancel: Arc<AtomicBool>
     ) {
         let rx_info = device_info.clone();
         let rx_cancel = Arc::clone(&cancel);
         let tx_info = device_info.clone();
         let tx_cancel = Arc::clone(&cancel);
+        let tx_event_sender = event_sender.clone();
 
         #[cfg(feature = "tokio")]
         {
             use tokio::runtime::Handle;
             if let Ok(handle) = Handle::try_current() {
                 debug!("Starting IO background tasks");
-                handle.spawn_blocking(move || Self::run_rx_handler(rx_info, rx_sender, rx_cancel));
-                handle.spawn_blocking(move || Self::run_tx_handler(tx_info, tx_receiver, tx_cancel));
+                handle.spawn_blocking(move || Self::run_rx_handler(rx_info, event_sender, rx_cancel));
+                handle.spawn_blocking(move || Self::run_tx_handler(tx_info, command_receiver, tx_event_sender, tx_cancel));
                 return;
             }
         }
@@ -42,10 +53,10 @@ pub(crate) trait RodeCasterDeviceIOHandler {
         use std::thread::Builder;
         let _ = Builder::new()
             .name(format!("{}-rx", device_name))
-            .spawn(move || Self::run_rx_handler(rx_info, rx_sender, rx_cancel));
+            .spawn(move || Self::run_rx_handler(rx_info, event_sender, rx_cancel));
         let _ = Builder::new()
             .name(format!("{}-tx", device_name))
-            .spawn(move || Self::run_tx_handler(tx_info, tx_receiver, tx_cancel));
+            .spawn(move || Self::run_tx_handler(tx_info, command_receiver, tx_event_sender, tx_cancel));
     }
 
     // reads the device input and issues internal events that the protocol implementation can parse
@@ -67,7 +78,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
         };
 
         while !canceled.load(Ordering::Relaxed) {
-            match transport.read_timeout(Duration::from_millis(100)) {
+            match transport.read_timeout(Duration::from_millis(10)) {
                 Ok(packet) => {
                     trace!("Received packet from HID device: {:?}", packet);
                     let _ = sender.send(RodeCasterDeviceIOEvent::PacketReceived(packet));
@@ -76,6 +87,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                     RodeCasterHidTransportError::TimeoutError => { /* do nothing */ }
                     err => {
                         warn!("Failed to read packet: {}", err);
+                        let _ = sender.send(RodeCasterDeviceIOEvent::RXError(err));
                     }
                 }
             }
@@ -86,7 +98,8 @@ pub(crate) trait RodeCasterDeviceIOHandler {
     // listens for tx events and writes the parsed packet to the devices output stream
     fn run_tx_handler(
         device_info: DeviceInfo,
-        receiver: Receiver<RodeCasterDeviceIOEvent>,
+        receiver: Receiver<RodeCasterDeviceIOCommand>,
+        sender: Sender<RodeCasterDeviceIOEvent>,
         canceled: Arc<AtomicBool>
     ) {
         let transport = match RodeCasterHidTransport::new(
@@ -103,18 +116,17 @@ pub(crate) trait RodeCasterDeviceIOHandler {
 
         while !canceled.load(Ordering::Relaxed) {
             match receiver.recv_timeout(Duration::from_millis(100)) {
-                Ok(api_event) => match api_event {
-                    RodeCasterDeviceIOEvent::PacketReceived(packet) => match transport.write_timeout(&packet, Duration::from_millis(100)) {
-                        Ok(_) => { /* packet send successfully */ }
-                        Err(e) => {
-                            warn!("Failed to write packet: {}", e);
-                            // todo: send io error event
+                Ok(command) => match command {
+                    RodeCasterDeviceIOCommand::SendPacket(packet) => {
+                        match transport.write_timeout(&packet, Duration::from_millis(10)) {
+                            Ok(_) => { /* packet send successfully */ }
+                            Err(err) => {
+                                warn!("Failed to write packet: {}", err);
+                                let _ = sender.send(RodeCasterDeviceIOEvent::TXError(err));
+                            }
                         }
-                    },
-                    _ => {
-                        // do nothing
                     }
-                },
+                }
                 Err(err) => match err {
                     RecvTimeoutError::Timeout => { /* do nothing */ }
                     RecvTimeoutError::Disconnected => {
@@ -124,6 +136,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                 }
             }
         }
+
         debug!("TX handler terminated");
     }
 }
