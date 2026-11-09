@@ -42,16 +42,17 @@ impl RodeCasterHidTransport {
     pub(crate) fn read_timeout(&self, timeout: Duration) -> Result<Vec<u8>, RodeCasterHidTransportError> {
         let mut packet: Vec<u8> = Vec::new();
 
+        let mut buffer = vec![0u8; Self::FRAME_SIZE];
+        buffer[0] = self.rx_report_id;
+
         let start = Instant::now();
         while start.elapsed() < timeout {
-            let mut buffer = vec![0u8; Self::FRAME_SIZE];
-            buffer[0] = self.rx_report_id;
-
             match self.handle.read_timeout(&mut buffer, 10) {
                 Ok(bytes_read) => match bytes_read {
                     _ if bytes_read == 0 => { /* no message was received yet */ }
                     _ => {
                         packet.extend_from_slice(&buffer[1..bytes_read]);
+                        buffer[1..].fill(0);
 
                         if packet.len() < 4 {
                             // not enough bytes to parse length yet
