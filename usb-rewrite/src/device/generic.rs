@@ -38,7 +38,6 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInternal for RodeC
     async fn connect(device: DeviceInfo) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
         let (io_event_sender, io_event_receiver) = flume::bounded(64);
         let (io_command_sender, io_command_receiver) = flume::bounded(64);
-
         Self::spawn_io_handler(device.clone(), io_event_sender, io_command_receiver);
 
         Ok(Arc::new(Box::new(RodeCasterDevice {

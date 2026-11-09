@@ -11,7 +11,7 @@ tokio = ["dep:tokio"]
 
 [dependencies]
 log = "0.4.35"
-hidapi = "2.6.7" # todo: replace with async-hid
+hidapi = "2.6.7"
 flume = "0.12.0"
 futures = "0.3.34"
 futures-timer = "3.0.4"
