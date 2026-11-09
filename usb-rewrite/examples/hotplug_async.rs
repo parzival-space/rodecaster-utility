@@ -28,6 +28,6 @@ async fn main() {
     }
 
     info!("Shutting down hotplug task");
-    let _ = management_tx.send(HidHotPlugThreadManagement::Quit);
+    let _ = management_tx.send_async(HidHotPlugThreadManagement::Quit).await;
     let _ = hid_handle.await;
 }
