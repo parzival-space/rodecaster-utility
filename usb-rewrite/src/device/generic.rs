@@ -1,10 +1,11 @@
 use crate::device::common::{RodeCasterDeviceInfo, RodeCasterDeviceInternal, RodeCasterDeviceKind};
-use crate::device::io::RodeCasterDeviceIOHandler;
+use crate::device::io::{RodeCasterDeviceIOCommand, RodeCasterDeviceIOEvent, RodeCasterDeviceIOHandler};
 use hidapi::{DeviceInfo, HidError};
 use std::marker::PhantomData;
 use std::panic::RefUnwindSafe;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use flume::{Receiver, Sender};
 
 /// A generic device implementation for a RodeCaster protocol compatible devices.
 #[derive(Debug)]
@@ -13,7 +14,8 @@ pub(crate) struct RodeCasterDevice<K: RodeCasterDeviceKind> {
     serial: String,
     firmware_version: String,
 
-    cancel_handler: Arc<AtomicBool>,
+    io_sender: Sender<RodeCasterDeviceIOCommand>,
+    io_receiver: Receiver<RodeCasterDeviceIOEvent>,
 
     _kind: PhantomData<K>,
 }
@@ -34,17 +36,17 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInfo for RodeCaste
 
 impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInternal for RodeCasterDevice<K> {
     async fn connect(device: DeviceInfo) -> Result<Arc<Box<dyn RodeCasterDeviceHandle>>, HidError> {
-        let cancel_handler = Arc::new(AtomicBool::new(false));
-        let (io_rx_sender, io_rx_receiver) = flume::unbounded();
-        let (io_tx_sender, io_tx_receiver) = flume::unbounded();
+        let (io_event_sender, io_event_receiver) = flume::bounded(64);
+        let (io_command_sender, io_command_receiver) = flume::bounded(64);
 
-        Self::spawn_io_handler(device.clone(), io_rx_sender, io_tx_receiver, Arc::clone(&cancel_handler)).await;
+        Self::spawn_io_handler(device.clone(), io_event_sender, io_command_receiver);
 
         Ok(Arc::new(Box::new(RodeCasterDevice {
             pid: device.product_id(),
             serial: device.serial_number().unwrap_or_default().to_string(),
             firmware_version: String::new(),
-            cancel_handler,
+            io_sender: io_command_sender,
+            io_receiver: io_event_receiver,
             _kind: PhantomData::<K>,
         })))
     }
@@ -53,7 +55,7 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceIOHandler for Rode
 
 impl<K: RodeCasterDeviceKind> Drop for RodeCasterDevice<K> {
     fn drop(&mut self) {
-        self.cancel_handler.store(true, Ordering::Release);
+        let _ = self.io_sender.send(RodeCasterDeviceIOCommand::QuitThread);
     }
 }
 
