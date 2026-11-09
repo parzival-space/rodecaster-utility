@@ -1,5 +1,5 @@
 use crate::protocol::hid_transport::{RodeCasterHidTransport, RodeCasterHidTransportError};
-use flume::{Receiver, RecvTimeoutError, Sender, TryRecvError};
+use flume::{Receiver, RecvError, RecvTimeoutError, Sender, TryRecvError};
 use hidapi::DeviceInfo;
 use log::{debug, error, trace, warn};
 use std::sync::Arc;
@@ -75,8 +75,10 @@ pub(crate) trait RodeCasterDeviceIOHandler {
         // "token" shared between TX and RX thread to notify each other when a shutdown is requested
         canceled: Arc<AtomicBool>
     ) {
+        trace!("Running RX worker for {:?} ({})", device_info.path(), device_info.product_string().unwrap_or("unknown"));
+
         match RodeCasterHidTransport::new(
-            device_info,
+            device_info.clone(),
             0x03,
             0x04
         ) {
@@ -91,7 +93,6 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                         Err(err) => match err {
                             RodeCasterHidTransportError::TimeoutError => { /* do nothing */ }
                             err => {
-                                warn!("Failed to read packet: {}", err);
                                 let _ = sender.send(RodeCasterDeviceIOEvent::RXError(err));
                             }
                         }
@@ -105,6 +106,8 @@ pub(crate) trait RodeCasterDeviceIOHandler {
 
         // notify tx thread that we completed
         canceled.store(true, Ordering::Release);
+
+        trace!("Exited RX worker for {:?} ({})", device_info.path(), device_info.product_string().unwrap_or("unknown"));
     }
 
     // listens for tx events and writes the parsed packet to the devices output stream
@@ -116,20 +119,22 @@ pub(crate) trait RodeCasterDeviceIOHandler {
         // "token" shared between TX and RX thread to notify each other when a shutdown is requested
         canceled: Arc<AtomicBool>
     ) {
+        trace!("Running TX worker for {:?} ({})", device_info.path(), device_info.product_string().unwrap_or("unknown"));
+
         match RodeCasterHidTransport::new(
-            device_info,
+            device_info.clone(),
             0x03,
             0x04
         ) {
             Ok(transport) => {
-                while !canceled.load(Ordering::Acquire) {
-                    match receiver.recv_timeout(Duration::from_millis(100)) {
+
+                loop {
+                    match receiver.recv() {
                         Ok(command) => match command {
                             RodeCasterDeviceIOCommand::SendPacket(packet) => {
                                 match transport.write_timeout(&packet, Duration::from_millis(10)) {
                                     Ok(_) => { /* packet send successfully */ }
                                     Err(err) => {
-                                        warn!("Failed to write packet: {}", err);
                                         let _ = sender.try_send(RodeCasterDeviceIOEvent::TXError(err));
                                     }
                                 }
@@ -137,13 +142,11 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                             RodeCasterDeviceIOCommand::QuitThread => {
                                 // the user requested us to close the device handle.
                                 // we can just break here, as the RX loop gets notified once we close this thread.
-                                trace!("Goodbye");
                                 break;
                             }
                         }
                         Err(err) => match err {
-                            RecvTimeoutError::Timeout => { /* do nothing */ }
-                            RecvTimeoutError::Disconnected => {
+                            RecvError::Disconnected => {
                                 trace!("API channel disconnected");
                                 break;
                             }
@@ -158,5 +161,7 @@ pub(crate) trait RodeCasterDeviceIOHandler {
 
         // notify rx thread that we completed
         canceled.store(true, Ordering::Release);
+
+        trace!("Exited TX worker for {:?} ({})", device_info.path(), device_info.product_string().unwrap_or("unknown"));
     }
 }
