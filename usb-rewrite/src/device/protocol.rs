@@ -1,12 +1,13 @@
 use flume::{Receiver, RecvError, Sender};
 use futures::select;
-use log::{debug, error, warn};
+use log::{debug, error, trace, warn};
 use std::future::Future;
 use hidapi::DeviceInfo;
 use crate::device::io::{RodeCasterDeviceIOCommand, RodeCasterDeviceIOEvent};
 use crate::protocol::packet::handshake::HandshakePacket;
 use crate::protocol::packet::{Packet};
-use crate::protocol::Serialize;
+use crate::protocol::packet::update::UpdatePacket;
+use crate::protocol::{Deserialize, Serialize};
 
 pub(crate) enum RodeCasterDeviceProtocolHandlerEvent {
 
@@ -110,7 +111,11 @@ pub(crate) trait RodeCasterDeviceProtocolHandler {
                     result = io_receiver.recv_async() => match result {
                         Ok(event) => match event {
                             RodeCasterDeviceIOEvent::PacketReceived(packet_bytes) => {
-                                debug!("Got packet received: {:?}", packet_bytes);
+                                if let Ok((_, packet)) = UpdatePacket::deserialize(&packet_bytes) {
+                                    trace!("Received update packet: {:?}", packet);
+                                } else {
+                                    warn!("Failed to parse packet: {:?}", packet_bytes);
+                                }
                             }
                             RodeCasterDeviceIOEvent::TXError(err) => {
                                 error!("TX error: {:?}", err);
