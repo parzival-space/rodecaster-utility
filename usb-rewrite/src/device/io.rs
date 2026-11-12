@@ -85,14 +85,14 @@ pub(crate) trait RodeCasterDeviceIOHandler {
             Ok(transport) => {
 
                 while !canceled.load(Ordering::Relaxed) {
-                    match transport.read_timeout(Duration::from_millis(10)) {
+                    match transport.read_timeout(Duration::from_millis(1000)) {
                         Ok(packet) => {
-                            let _ = sender.send(RodeCasterDeviceIOEvent::PacketReceived(packet));
+                            let _ = sender.try_send(RodeCasterDeviceIOEvent::PacketReceived(packet));
                         }
                         Err(err) => match err {
                             RodeCasterHidTransportError::TimeoutError => { /* do nothing */ }
                             err => {
-                                let _ = sender.send(RodeCasterDeviceIOEvent::RXError(err));
+                                let _ = sender.try_send(RodeCasterDeviceIOEvent::RXError(err));
                             }
                         }
                     }
