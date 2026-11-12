@@ -1,6 +1,6 @@
 use crate::protocol::hid_transport::{RodeCasterHidTransport, RodeCasterHidTransportError};
 use flume::{Receiver, RecvError, RecvTimeoutError, Sender, TryRecvError};
-use hidapi::DeviceInfo;
+use hidapi::{DeviceInfo, HidError};
 use log::{debug, error, trace, warn};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -92,7 +92,9 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                         Err(err) => match err {
                             RodeCasterHidTransportError::TimeoutError => { /* do nothing */ }
                             err => {
+                                // at this point we are unrecoverable
                                 let _ = sender.try_send(RodeCasterDeviceIOEvent::RXError(err));
+                                break;
                             }
                         }
                     }
