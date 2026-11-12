@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Write;
 use byteorder::WriteBytesExt;
 use nom::bytes::streaming::tag;
@@ -5,9 +6,20 @@ use nom::IResult;
 use crate::protocol::packet::Packet;
 use crate::protocol::{Deserialize, Serialize};
 use crate::protocol::types::node::Node;
+use crate::protocol::types::value::Value;
 
 pub(crate) struct DeviceReportPacket {
-    report: Node,
+    pub report: Node,
+}
+
+impl DeviceReportPacket {
+    pub fn get_children(&self) -> Vec<Node> {
+        self.report.children.clone()
+    }
+
+    pub fn get_properties(&self) -> HashMap<String, Value> {
+        self.report.properties.clone()
+    }
 }
 
 impl Packet for DeviceReportPacket {
