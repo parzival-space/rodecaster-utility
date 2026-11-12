@@ -58,12 +58,12 @@ pub(crate) trait RodeCasterDeviceProtocolHandler {
         let _ = Builder::new()
             .name(format!("{}-rx", device_name))
             .spawn(move || {
-                let _ = Self::run_handler(
+                futures::executor::block_on(Self::run_handler(
                     sender,
                     receiver,
                     io_sender,
                     io_receiver
-                );
+                ));
             });
     }
 
@@ -75,6 +75,7 @@ pub(crate) trait RodeCasterDeviceProtocolHandler {
     ) -> impl Future<Output = ()> + Send {
         async move {
             // initialize device by sending handshake command
+            // todo: if this fails because of delayed startups, try to resend it
             match HandshakePacket::default().serialize() {
                 Ok(bytes) => {
                     let _ = io_sender.send_async(RodeCasterDeviceIOCommand::SendPacket(bytes)).await;
