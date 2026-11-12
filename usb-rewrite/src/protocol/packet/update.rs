@@ -6,6 +6,7 @@ use nom::{error_position, IResult};
 use nom::error::ErrorKind;
 use nom::number::streaming::{le_u16, le_u8};
 use crate::protocol::{Deserialize, Serialize};
+use crate::protocol::packet::Packet;
 use crate::protocol::types::value::Value;
 
 #[derive(Debug)]
@@ -18,6 +19,8 @@ pub(crate) struct UpdatePacket {
 impl UpdatePacket {
     const PACKET_ID: u8 = 1u8;
 }
+
+impl Packet for UpdatePacket {}
 
 impl Serialize for UpdatePacket {
     fn serialize(&self) -> std::io::Result<Vec<u8>>

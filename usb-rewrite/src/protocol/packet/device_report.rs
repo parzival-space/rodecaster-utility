@@ -3,11 +3,12 @@ use std::io::Write;
 use byteorder::WriteBytesExt;
 use nom::bytes::streaming::tag;
 use nom::IResult;
-use crate::protocol::packet::Packet;
 use crate::protocol::{Deserialize, Serialize};
+use crate::protocol::packet::Packet;
 use crate::protocol::types::node::Node;
 use crate::protocol::types::value::Value;
 
+#[derive(Debug)]
 pub(crate) struct DeviceReportPacket {
     pub report: Node,
 }
@@ -22,6 +23,8 @@ impl DeviceReportPacket {
         self.report.properties.clone()
     }
 }
+
+impl Packet for DeviceReportPacket {}
 
 impl Serialize for DeviceReportPacket {
     fn serialize(&self) -> std::io::Result<Vec<u8>>
