@@ -1,13 +1,14 @@
 use std::io::Write;
 use byteorder::{WriteBytesExt, LE};
+use log::error;
 use nom::bytes::streaming::tag;
 use nom::{error_position, IResult};
 use nom::error::ErrorKind;
 use nom::number::streaming::{le_u16, le_u8};
-use crate::protocol::packet::Packet;
 use crate::protocol::{Deserialize, Serialize};
 use crate::protocol::types::value::Value;
 
+#[derive(Debug)]
 pub(crate) struct UpdatePacket {
     indices: Vec<usize>,
     field: String,
@@ -59,7 +60,7 @@ impl Deserialize for UpdatePacket {
     where
         Self: Sized
     {
-        let (data, _id) = tag([Self::PACKET_ID].as_ref())(data)?;
+        let (data, _) = tag([Self::PACKET_ID].as_ref())(data)?;
         
         // first byte is probably the indices list length. I haven't yet seen a value that is not 1
         // so we will just assume for now its always 1
@@ -77,8 +78,8 @@ impl Deserialize for UpdatePacket {
             let (data_inner, index_length) = le_u8(data)?;
             let (data_inner, index) = match index_length {
                 0u8 => Ok((data_inner, 0)),
-                1u8 => le_u8(data_inner).map(|(data_inner, value)| (data, value as usize)),
-                2u8 => le_u16(data_inner).map(|(data_inner, value)| (data, value as usize)),
+                1u8 => le_u8(data_inner).map(|(data_inner, value)| (data_inner, value as usize)),
+                2u8 => le_u16(data_inner).map(|(data_inner, value)| (data_inner, value as usize)),
                 _ => Err(nom::Err::Error(error_position!(data, ErrorKind::Fail))),
             }?;
             
