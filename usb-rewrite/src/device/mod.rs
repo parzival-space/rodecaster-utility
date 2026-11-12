@@ -1,6 +1,7 @@
 pub(crate) mod common;
 mod generic;
 mod io;
+mod protocol;
 
 use crate::common::DeviceIdentifier;
 use crate::device::common::{RodeCasterDeviceInternal, RodeCasterDeviceKind};

@@ -6,6 +6,7 @@ use std::panic::RefUnwindSafe;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use flume::{Receiver, Sender};
+use crate::device::protocol::{RodeCasterDeviceProtocolHandler, RodeCasterDeviceProtocolHandlerCommand, RodeCasterDeviceProtocolHandlerEvent};
 
 /// A generic device implementation for a RodeCaster protocol compatible devices.
 #[derive(Debug)]
@@ -14,6 +15,9 @@ pub(crate) struct RodeCasterDevice<K: RodeCasterDeviceKind> {
     serial: String,
     firmware_version: String,
 
+    protocol_sender: Sender<RodeCasterDeviceProtocolHandlerCommand>,
+    protocol_receiver: Receiver<RodeCasterDeviceProtocolHandlerEvent>,
+    
     io_sender: Sender<RodeCasterDeviceIOCommand>,
     io_receiver: Receiver<RodeCasterDeviceIOEvent>,
 
@@ -39,11 +43,23 @@ impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceInternal for RodeC
         let (io_event_sender, io_event_receiver) = flume::bounded(64);
         let (io_command_sender, io_command_receiver) = flume::bounded(64);
         Self::spawn_io_handler(device.clone(), io_event_sender, io_command_receiver);
+        
+        let (protocol_event_sender, protocol_event_receiver) = flume::bounded(64);
+        let (protocol_command_sender, protocol_command_receiver) = flume::bounded(64);
+        Self::spawn_protocol_handler(
+            device.clone(),
+            protocol_event_sender,
+            protocol_command_receiver,
+            io_command_sender.clone(),
+            io_event_receiver.clone(),
+        );
 
         Ok(Arc::new(Box::new(RodeCasterDevice {
             pid: device.product_id(),
             serial: device.serial_number().unwrap_or_default().to_string(),
             firmware_version: String::new(),
+            protocol_sender: protocol_command_sender,
+            protocol_receiver: protocol_event_receiver,
             io_sender: io_command_sender,
             io_receiver: io_event_receiver,
             _kind: PhantomData::<K>,
@@ -59,5 +75,7 @@ impl<K: RodeCasterDeviceKind> Drop for RodeCasterDevice<K> {
 }
 
 impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceHandle for RodeCasterDevice<K> {}
+
+impl<K: RodeCasterDeviceKind + RefUnwindSafe> RodeCasterDeviceProtocolHandler for RodeCasterDevice<K> {}
 
 pub trait RodeCasterDeviceHandle: RodeCasterDeviceInfo + RefUnwindSafe + Sync + Send {}

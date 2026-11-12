@@ -14,8 +14,6 @@ pub enum NodeType {
 
 impl Serialize for NodeType {
     fn serialize(&self) -> std::io::Result<Vec<u8>>
-    where
-        Self: Sized
     {
         panic!(
             "Serializing of the Composite type is currently not implemented, as there is no use\
@@ -48,8 +46,6 @@ pub struct Node {
 
 impl Serialize for Node {
     fn can_serialize(&self) -> bool
-    where
-        Self: Sized,
     {
         false
     }

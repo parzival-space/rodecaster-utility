@@ -1,19 +1,21 @@
 use nom::bytes::streaming::tag;
 use nom::IResult;
-use crate::protocol::packet::Packet;
 use crate::protocol::{Deserialize, Serialize};
 
+#[derive(Default)]
 pub(crate) struct HandshakePacket;
 
 impl HandshakePacket {
     // the handshake packet is just a sequence of specific bytes that are hardcoded into the firmwares main GUI application
     const MAGIC_SEQUENCE: [u8; 4] = [0xAD, 0x10, 0xA7, 0xB0];
 }
-
-impl Packet for HandshakePacket {
-    // we don't need a packet id here, as the handshake is just a byte sequence
-    const PACKET_ID: u8 = 0;
-}
+//
+// impl Packet for HandshakePacket {
+//     fn get_packet_id() -> u8 {
+//         // we don't need a packet id here, as the handshake is just a byte sequence
+//         unimplemented!("handshake packet does not have a packet id")
+//     }
+// }
 
 impl Serialize for HandshakePacket {
     fn serialize(&self) -> std::io::Result<Vec<u8>>

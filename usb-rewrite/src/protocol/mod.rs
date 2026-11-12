@@ -4,11 +4,11 @@ pub(crate) mod packet;
 
 /// allows serializing the type into the byte array the rodecaster protocol uses
 pub(crate) trait Serialize {
-    fn can_serialize(&self) -> bool where Self: Sized {
+    fn can_serialize(&self) -> bool {
         Self::serialize(self).is_ok()
     }
 
-    fn serialize(&self) -> std::io::Result<Vec<u8>> where Self: Sized;
+    fn serialize(&self) -> std::io::Result<Vec<u8>>;
 }
 
 /// allows deserializing into types from the rodecaster protocol byte array

@@ -14,7 +14,7 @@ pub(crate) struct UpdatePacket {
     value: Value,
 }
 
-impl Packet for UpdatePacket {
+impl UpdatePacket {
     const PACKET_ID: u8 = 1u8;
 }
 

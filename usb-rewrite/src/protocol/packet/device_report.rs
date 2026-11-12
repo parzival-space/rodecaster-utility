@@ -13,6 +13,7 @@ pub(crate) struct DeviceReportPacket {
 }
 
 impl DeviceReportPacket {
+    const PACKET_ID: u8 = 2u8;
     pub fn get_children(&self) -> Vec<Node> {
         self.report.children.clone()
     }
@@ -20,10 +21,6 @@ impl DeviceReportPacket {
     pub fn get_properties(&self) -> HashMap<String, Value> {
         self.report.properties.clone()
     }
-}
-
-impl Packet for DeviceReportPacket {
-    const PACKET_ID: u8 = 2u8;
 }
 
 impl Serialize for DeviceReportPacket {

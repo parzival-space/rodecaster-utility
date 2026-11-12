@@ -17,8 +17,6 @@ pub enum Value {
 
 impl Serialize for Value {
     fn serialize(&self) -> std::io::Result<Vec<u8>>
-    where
-        Self: Sized
     {
         let mut stream = vec![];
         match self {

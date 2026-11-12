@@ -6,8 +6,6 @@ use crate::protocol::{Deserialize, Serialize};
 
 impl Serialize for String {
     fn serialize(&self) -> std::io::Result<Vec<u8>>
-    where
-        Self: Sized
     {
         let mut stream = vec![];
         stream.write_all(self.as_bytes())?;
