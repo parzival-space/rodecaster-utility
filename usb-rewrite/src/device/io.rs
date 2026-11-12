@@ -87,7 +87,6 @@ pub(crate) trait RodeCasterDeviceIOHandler {
                 while !canceled.load(Ordering::Relaxed) {
                     match transport.read_timeout(Duration::from_millis(10)) {
                         Ok(packet) => {
-                            trace!("Received packet from HID device: {:?}", packet);
                             let _ = sender.send(RodeCasterDeviceIOEvent::PacketReceived(packet));
                         }
                         Err(err) => match err {
