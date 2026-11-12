@@ -2699,12 +2699,14 @@ dependencies = [
 name = "rodecaster-usb-rewrite"
 version = "0.1.0"
 dependencies = [
+ "byteorder",
  "env_logger",
  "flume",
  "futures",
  "futures-timer",
  "hidapi",
  "log",
+ "nom 8.0.0",
  "thiserror 2.0.21",
  "tokio",
 ]
