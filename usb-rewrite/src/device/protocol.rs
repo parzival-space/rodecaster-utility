@@ -8,6 +8,7 @@ use crate::protocol::packet::handshake::HandshakePacket;
 use crate::protocol::packet::{Packet};
 use crate::protocol::packet::update::UpdatePacket;
 use crate::protocol::{Deserialize, Serialize};
+use crate::protocol::packet::device_report::DeviceReportPacket;
 
 pub(crate) enum RodeCasterDeviceProtocolHandlerEvent {
 
@@ -112,10 +113,17 @@ pub(crate) trait RodeCasterDeviceProtocolHandler {
                     result = io_receiver.recv_async() => match result {
                         Ok(event) => match event {
                             RodeCasterDeviceIOEvent::PacketReceived(packet_bytes) => {
-                                if let Ok((_, packet)) = UpdatePacket::deserialize(&packet_bytes) {
-                                    trace!("Received update packet: {:?}", packet);
-                                } else {
-                                    warn!("Failed to parse packet: {:?}", packet_bytes);
+                                match packet_bytes {
+                                    // todo: add proper packet parsing
+                                    _ if let Ok(packet) = UpdatePacket::deserialize(&packet_bytes) => {
+                                        trace!("Received packet: {:?}", packet);
+                                    }
+                                    _ if let Ok(packet) = DeviceReportPacket::deserialize(&packet_bytes) => {
+                                        trace!("Received packet: {:?}", packet);
+                                    }
+                                    _ => {
+                                        warn!("Received unsupported packet: {:02x?}", packet_bytes)
+                                    }
                                 }
                             }
                             RodeCasterDeviceIOEvent::TXError(err) => {
