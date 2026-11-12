@@ -1,5 +1,6 @@
 use hidapi::{DeviceInfo, HidApi, HidDevice, HidError};
 use std::time::{Duration, Instant};
+use log::trace;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -23,7 +24,7 @@ pub(crate) struct RodeCasterHidTransport {
 }
 
 impl RodeCasterHidTransport {
-    const MAX_PAYLOAD_LEN: usize = 256 * 1024; // 256 KB
+    const MAX_PAYLOAD_LEN: usize = 256 * 1024 * 1024; // 256 MiB
     const FRAME_SIZE: usize = 256; // 1 report byte + 255 data bytes
 
     pub(crate) fn new(device_info: DeviceInfo, tx_report_id: u8, rx_report_id: u8) -> Result<Self, HidError> {
@@ -47,31 +48,34 @@ impl RodeCasterHidTransport {
 
         let start = Instant::now();
         while start.elapsed() < timeout {
-            match self.handle.read_timeout(&mut buffer, 10) {
+            match self.handle.read_timeout(&mut buffer, timeout.as_millis() as i32) {
                 Ok(bytes_read) => match bytes_read {
                     _ if bytes_read == 0 => { /* no message was received yet */ }
                     _ => {
                         packet.extend_from_slice(&buffer[1..bytes_read]);
                         buffer[1..].fill(0);
 
-                        if packet.len() < 4 {
-                            // not enough bytes to parse length yet
+                        let Some(payload_length) = packet
+                            .get(..4)
+                            .and_then(|value| value.try_into().ok())
+                            .map(u32::from_le_bytes)
+                            .map(|value| value as usize)
+                        else {
+                            // not enough bytes to parse length yet or parsing failed
+                            continue;
+                        };
+
+                        if payload_length > Self::MAX_PAYLOAD_LEN {
+                            return Err(RodeCasterHidTransportError::PayloadTooLargeError(payload_length));
+                        }
+
+                        let full_packet_length = payload_length + 4;
+                        if packet.len() < full_packet_length {
+                            // still missing some bytes
                             continue;
                         }
 
-                        let payload_len = u32::from_le_bytes(packet[0..4].try_into().unwrap()) as usize;
-                        if payload_len > Self::MAX_PAYLOAD_LEN {
-                            return Err(RodeCasterHidTransportError::PayloadTooLargeError(payload_len));
-                        }
-
-                        let expected_packet_len = payload_len + 4; // include 4 length bytes
-                        if packet.len() < expected_packet_len {
-                            // the rest of this message will arrive in another read.
-                            continue;
-                        }
-
-                        let payload = packet[4..expected_packet_len].to_vec();
-                        return Ok(payload);
+                        return Ok(packet[4..full_packet_length].to_vec());
                     }
                 },
                 Err(err) => {
